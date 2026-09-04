@@ -1,0 +1,55 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "productName": "Grains Moulus",
+  "version": "1.0.0",
+  "identifier": "ci.grainsmoulus.stock",
+  "build": {
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:8080",
+    "beforeDevCommand": "yarn serve",
+    "beforeBuildCommand": "node scripts/prepare-tauri-resources.js && yarn build"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "GRAINS MOULUS - STOCK ET CAISSE",
+        "width": 800,
+        "height": 600,
+        "resizable": true,
+        "fullscreen": false
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"],
+    "createUpdaterArtifacts": true,
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "resources": {
+      "resources-staging/php/": "php",
+      "resources-staging/backend/": "backend"
+    },
+    "windows": {
+      "nsis": {
+        "installMode": "both"
+      }
+    }
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEYzMDdFNTVDQUZCMDAwMDkKUldRSkFMQ3ZYT1VIODBCUEZoTWVvK0NwNEwwYTFtS2hpeERVR3FpQzhKOEdNUFZaT1paeEZYTUkK",
+      "endpoints": [
+        "https://github.com/Christianzer/graindesoleil/releases/latest/download/latest.json"
+      ]
+    }
+  }
+}

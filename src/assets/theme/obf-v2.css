@@ -1,0 +1,366 @@
+/* ============================================================
+   OBF — Thème v2.0  (couche additive, chargée APRÈS Bootstrap / SB Admin 2)
+   Direction : Indigo SaaS clair.  Ne pas modifier therich.css (vendeur).
+   ============================================================ */
+
+:root {
+  --obf-primary:      #4F46E5;
+  --obf-primary-dark: #4338CA;
+  --obf-primary-50:   #EEF0FE;
+  --obf-accent:       #0D9488;
+  --obf-accent-dark:  #0B7D72;
+  --obf-accent-50:    #E6F5F3;
+
+  --obf-bg:        #F4F6FB;
+  --obf-surface:   #FFFFFF;
+  --obf-text:      #1F2937;
+  --obf-muted:     #64748B;
+  --obf-border:    #E8EBF2;
+
+  --obf-radius:    14px;
+  --obf-radius-sm: 10px;
+  --obf-radius-pill: 999px;
+  --obf-shadow:    0 2px 10px rgba(31,41,55,.06);
+  --obf-shadow-md: 0 6px 22px rgba(31,41,55,.10);
+}
+
+/* ---------- Base ---------- */
+body,
+.login-form,
+.login-form form {
+  font-family: 'Inter', 'Nunito', -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+}
+body, #page-top {
+  background-color: var(--obf-bg) !important;
+  color: var(--obf-text);
+}
+#content-wrapper { background-color: var(--obf-bg) !important; }
+
+/* ---------- Cartes ---------- */
+.card {
+  border: 1px solid var(--obf-border) !important;
+  border-radius: var(--obf-radius) !important;
+  box-shadow: var(--obf-shadow) !important;
+  overflow: hidden;
+}
+.card .card-header {
+  background: transparent !important;
+  border-bottom: 1px solid var(--obf-border) !important;
+  font-weight: 700;
+  color: var(--obf-text);
+  letter-spacing: .2px;
+}
+.card .card-header h6,
+.card .card-header .text-primary { color: var(--obf-primary) !important; }
+
+/* ---------- Boutons (pilules) ---------- */
+.btn {
+  border-radius: var(--obf-radius-pill) !important;
+  font-weight: 600;
+  letter-spacing: .2px;
+  transition: all .15s ease;
+}
+.btn:focus { box-shadow: 0 0 0 .2rem rgba(79,70,229,.25) !important; }
+
+.btn-primary, .btn-info {
+  background-color: var(--obf-primary) !important;
+  border-color: var(--obf-primary) !important;
+}
+.btn-primary:hover, .btn-info:hover {
+  background-color: var(--obf-primary-dark) !important;
+  border-color: var(--obf-primary-dark) !important;
+}
+.btn-outline-primary {
+  color: var(--obf-primary) !important;
+  border-color: var(--obf-primary) !important;
+}
+.btn-outline-primary:hover {
+  background-color: var(--obf-primary) !important;
+  color: #fff !important;
+}
+.btn-success {
+  background-color: var(--obf-accent) !important;
+  border-color: var(--obf-accent) !important;
+}
+.btn-success:hover {
+  background-color: var(--obf-accent-dark) !important;
+  border-color: var(--obf-accent-dark) !important;
+}
+.btn-outline-success {
+  color: var(--obf-accent) !important;
+  border-color: var(--obf-accent) !important;
+}
+.btn-outline-success:hover {
+  background-color: var(--obf-accent) !important;
+  color: #fff !important;
+}
+
+/* ---------- Champs ---------- */
+.form-control, .custom-select, .b-form-datepicker .form-control {
+  border-radius: var(--obf-radius-sm) !important;
+  border-color: var(--obf-border) !important;
+}
+.form-control:focus {
+  border-color: var(--obf-primary) !important;
+  box-shadow: 0 0 0 .2rem rgba(79,70,229,.15) !important;
+}
+
+/* ---------- Tableaux ---------- */
+.table { color: var(--obf-text); }
+.table thead.thead-light th,
+.table .thead-light th,
+.table thead th {
+  background-color: #F8F9FC !important;
+  border-color: var(--obf-border) !important;
+  color: var(--obf-muted) !important;
+  text-transform: uppercase;
+  font-size: .72rem;
+  letter-spacing: .4px;
+  font-weight: 700;
+}
+.table td, .table th { border-color: var(--obf-border) !important; vertical-align: middle; }
+.table.b-table.table-bordered, .table-bordered td, .table-bordered th {
+  border-color: var(--obf-border) !important;
+}
+.table-hover tbody tr:hover { background-color: var(--obf-primary-50) !important; }
+
+/* ---------- Pagination ---------- */
+.page-link { color: var(--obf-primary); border-color: var(--obf-border); }
+.page-item.active .page-link {
+  background-color: var(--obf-primary);
+  border-color: var(--obf-primary);
+}
+
+/* ---------- Badges ---------- */
+.badge { border-radius: var(--obf-radius-pill); font-weight: 600; }
+.badge-success { background-color: var(--obf-accent) !important; }
+
+/* ---------- Fil d'Ariane (écrans non encore refaits) ---------- */
+.breadcrumb {
+  background: transparent !important;
+  padding-left: 0;
+  margin-bottom: 0;
+}
+.breadcrumb-item, .breadcrumb-item.active { color: var(--obf-muted); }
+
+/* ---------- Topbar ---------- */
+.topbar.navbar-light {
+  background: var(--obf-surface) !important;
+  border-bottom: 1px solid var(--obf-border);
+  box-shadow: var(--obf-shadow) !important;
+  border-radius: 0 0 var(--obf-radius) var(--obf-radius);
+}
+
+/* ============================================================
+   SIDEBAR claire  (classe .obf-sidebar posée dans sidebar.vue)
+   ============================================================ */
+.sidebar.obf-sidebar {
+  background: var(--obf-surface) !important;
+  border-right: 1px solid var(--obf-border);
+  box-shadow: var(--obf-shadow);
+}
+.obf-sidebar .sidebar-brand {
+  background: var(--obf-surface) !important;
+  border-bottom: 1px solid var(--obf-border);
+  padding: 1.1rem 1rem;
+}
+.obf-sidebar .sidebar-divider { border-top: 1px solid var(--obf-border); }
+
+.obf-sidebar .nav-item .nav-link {
+  color: var(--obf-muted) !important;
+  font-weight: 600;
+  margin: 2px 10px;
+  padding: .6rem .8rem;
+  border-radius: var(--obf-radius-sm);
+  display: flex;
+  align-items: center;
+  white-space: normal;          /* autorise le retour à la ligne */
+}
+.obf-sidebar .nav-item .nav-link i {
+  color: var(--obf-muted);
+  margin-right: .5rem;
+  flex: 0 0 auto;               /* l'icône ne se compresse pas */
+}
+.obf-sidebar .nav-item .nav-link span {
+  font-size: .8rem;
+  letter-spacing: .2px;
+  line-height: 1.2;
+  flex: 1 1 auto;
+  min-width: 0;                 /* permet au texte de revenir à la ligne */
+  white-space: normal;
+  word-break: break-word;
+}
+
+.obf-sidebar .nav-item .nav-link:hover { background: var(--obf-primary-50) !important; color: var(--obf-primary) !important; }
+.obf-sidebar .nav-item .nav-link:hover i { color: var(--obf-primary); }
+
+/* Item actif (route courante) */
+.obf-sidebar .nav-item > .nav-link.active {
+  background: var(--obf-primary) !important;
+  color: #fff !important;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(79,70,229,.30);
+}
+.obf-sidebar .nav-item > .nav-link.active i { color: #fff !important; }
+
+/* Sous-menus déroulants */
+/* Sous-menus : arborescence indentée avec ligne de guidage (pas de boîte) */
+.obf-sidebar .collapse-inner,
+.obf-sidebar .collapsing .collapse-inner {
+  background: transparent !important;
+  border: none !important;
+  border-left: 2px solid #e3e6f1 !important;
+  border-radius: 0;
+  margin: 2px 14px 8px 31px;     /* aligné sous l'icône du parent */
+  padding: 2px 0 2px 4px;
+  box-shadow: none;
+}
+.obf-sidebar .collapse-item {
+  color: var(--obf-muted) !important;
+  font-size: .78rem;
+  font-weight: 600;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  white-space: normal;           /* évite la troncature des sous-items */
+  line-height: 1.2;
+  padding: .5rem .6rem;
+  margin: 1px 6px 1px 0;
+  position: relative;
+}
+.obf-sidebar .collapse-item i {
+  flex: 0 0 auto;
+  margin-right: .5rem;
+  font-size: .76rem;
+  opacity: .8;
+}
+.obf-sidebar .collapse-item span { min-width: 0; word-break: break-word; }
+.obf-sidebar .collapse-item:hover { background: var(--obf-primary-50) !important; color: var(--obf-primary) !important; }
+.obf-sidebar .collapse-item:hover i { color: var(--obf-primary); opacity: 1; }
+/* Sous-item actif : pastille indigo sur la ligne de guidage */
+.obf-sidebar .collapse-item.active {
+  background: var(--obf-primary-50) !important;
+  color: var(--obf-primary) !important;
+  font-weight: 700;
+}
+.obf-sidebar .collapse-item.active i { color: var(--obf-primary); opacity: 1; }
+.obf-sidebar .collapse-item.active::before {
+  content: "";
+  position: absolute;
+  left: -5px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--obf-primary);
+}
+
+/* ---- Ergonomie : pleine hauteur fixe, menu défilant, pied ancré ---- */
+.sidebar.obf-sidebar {
+  display: flex;
+  flex-direction: column;
+  width: 16.5rem !important;    /* un peu plus large pour les libellés longs */
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  padding: 0;
+  overflow: hidden;            /* le défilement est interne à la zone scroll */
+}
+.obf-sidebar .sidebar-brand { flex: 0 0 auto; }
+
+/* therich.css (non modifiable) cible .sidebar avec des sélecteurs très
+   spécifiques hérités du mode "sidebar réduite à icônes" (SB Admin 2) :
+   nav-link figé à 6.5rem centré, sous-menus en volet flottant étroit
+   (position absolute, min-width 10rem) avec white-space nowrap partout.
+   Notre sidebar est toujours en mode "large" (16.5rem) : on neutralise
+   explicitement ce comportement, avec une spécificité/priorité suffisante
+   pour gagner sur ces règles plus spécifiques. */
+.sidebar.obf-sidebar .nav-item .nav-link {
+  width: auto !important;
+  text-align: left !important;
+}
+.sidebar.obf-sidebar .nav-item .collapse,
+.sidebar.obf-sidebar .nav-item .collapsing {
+  position: static !important;
+  left: auto !important;
+  top: auto !important;
+}
+.sidebar.obf-sidebar .nav-item .collapse .collapse-inner,
+.sidebar.obf-sidebar .nav-item .collapsing .collapse-inner {
+  min-width: 0 !important;
+}
+.sidebar.obf-sidebar .nav-item .collapse .collapse-inner .collapse-item,
+.sidebar.obf-sidebar .nav-item .collapsing .collapse-inner .collapse-item {
+  white-space: normal !important;
+  word-break: break-word !important;
+}
+.sidebar.obf-sidebar .nav-item .nav-link span {
+  white-space: normal !important;
+  word-break: break-word !important;
+}
+
+/* Zone de navigation défilante (entre la marque et le pied) */
+.obf-sidebar__scroll {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 8px 0 12px;
+  list-style: none;
+}
+/* Scrollbar discrète */
+.obf-sidebar__scroll::-webkit-scrollbar { width: 7px; }
+.obf-sidebar__scroll::-webkit-scrollbar-thumb { background: #d9dcec; border-radius: 999px; }
+.obf-sidebar__scroll::-webkit-scrollbar-thumb:hover { background: #c3c7e0; }
+
+/* Libellés de section */
+.obf-nav-section {
+  font-size: .66rem;
+  font-weight: 800;
+  letter-spacing: .8px;
+  text-transform: uppercase;
+  color: #9aa3b5;
+  padding: 14px 22px 6px;
+}
+
+/* Chevron des menus dépliables */
+.obf-sidebar .nav-link .obf-caret {
+  margin-left: auto;
+  margin-right: 0;
+  font-size: .7rem;
+  transition: transform .2s ease;
+  opacity: .7;
+}
+.obf-sidebar .nav-link[aria-expanded="true"] .obf-caret { transform: rotate(180deg); }
+.obf-sidebar .nav-link[aria-expanded="true"] {
+  background: var(--obf-primary-50) !important;
+  color: var(--obf-primary) !important;
+}
+.obf-sidebar .nav-link[aria-expanded="true"] i { color: var(--obf-primary) !important; }
+
+/* Pied de sidebar (toujours visible) */
+.obf-sidebar__footer {
+  flex: 0 0 auto;
+  border-top: 1px solid var(--obf-border);
+  padding: 8px 0 0;
+  list-style: none;
+}
+.obf-sidebar__footer .obf-logout:hover {
+  background: #fdecec !important;
+  color: #dc2626 !important;
+}
+.obf-sidebar__footer .obf-logout:hover i { color: #dc2626 !important; }
+
+/* Badge de version en bas de la sidebar */
+.obf-version-badge {
+  margin: 8px 14px 14px;
+  text-align: center;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .5px;
+  color: var(--obf-primary);
+  background: var(--obf-primary-50);
+  border: 1px solid #dfe1fb;
+  border-radius: var(--obf-radius-pill);
+  padding: .45rem .6rem;
+}
