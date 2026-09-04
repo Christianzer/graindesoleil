@@ -21,9 +21,16 @@ const REPO = 'Christianzer/graindesoleil'
 const root = path.join(__dirname, '..')
 const bundleDir = path.join(root, 'src-tauri', 'target', 'release', 'bundle', 'nsis')
 
+// Windows : yarn/tauri sont des shims .cmd, execFileSync a besoin de shell:true
+// pour les résoudre — dans ce mode Node n'échappe pas les arguments, donc on
+// le fait nous-mêmes (guillemets + échappement des guillemets internes).
+function quoteArg(a) {
+  return `"${String(a).replace(/"/g, '\\"')}"`
+}
+
 function run(cmd, args) {
   console.log(`$ ${cmd} ${args.join(' ')}`)
-  execFileSync(cmd, args, { cwd: root, stdio: 'inherit' })
+  execFileSync(quoteArg(cmd), args.map(quoteArg), { cwd: root, stdio: 'inherit', shell: true })
 }
 
 function main() {
@@ -55,16 +62,19 @@ function main() {
   fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n')
 
   // 2. Build signé (createUpdaterArtifacts: true génère le .nsis.zip + .sig)
+  // Appel direct des binaires locaux : sur cette machine, le "yarn" résolu
+  // par le shell cmd.exe passe par un shim corepack cassé pour ce projet.
   run('node', ['scripts/prepare-tauri-resources.js'])
-  run('yarn', ['build'])
-  run('./node_modules/.bin/tauri', ['build'])
+  run('node_modules/.bin/vue-cli-service', ['build'])
+  run('node_modules/.bin/tauri', ['build'])
 
   // 3. Repérer les artefacts produits (noms exacts dépendants de la version/arch)
+  // Pour la cible NSIS, l'artefact updater EST le setup.exe lui-même (pas de
+  // .zip intermédiaire) : Tauri le signe directement.
   const files = fs.readdirSync(bundleDir)
   const setupExe = files.find((f) => f.endsWith('-setup.exe'))
-  const updaterZip = files.find((f) => f.endsWith('.nsis.zip'))
-  const sigFile = files.find((f) => f.endsWith('.nsis.zip.sig'))
-  if (!setupExe || !updaterZip || !sigFile) {
+  const sigFile = files.find((f) => f === `${setupExe}.sig`)
+  if (!setupExe || !sigFile) {
     console.error(`Artefacts introuvables dans ${bundleDir}. Contenu :`, files)
     process.exit(1)
   }
@@ -78,7 +88,7 @@ function main() {
     platforms: {
       'windows-x86_64': {
         signature,
-        url: `https://github.com/${REPO}/releases/download/v${version}/${updaterZip}`,
+        url: `https://github.com/${REPO}/releases/download/v${version}/${encodeURIComponent(setupExe)}`,
       },
     },
   }
@@ -95,7 +105,6 @@ function main() {
   run('gh', [
     'release', 'create', `v${version}`,
     path.join(bundleDir, setupExe),
-    path.join(bundleDir, updaterZip),
     path.join(bundleDir, sigFile),
     latestPath,
     '--repo', REPO,
