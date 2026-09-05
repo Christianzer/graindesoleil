@@ -71,11 +71,14 @@ function main() {
   // 3. Repérer les artefacts produits (noms exacts dépendants de la version/arch)
   // Pour la cible NSIS, l'artefact updater EST le setup.exe lui-même (pas de
   // .zip intermédiaire) : Tauri le signe directement.
+  // Le dossier bundle/nsis n'est jamais nettoyé entre deux builds : il peut
+  // contenir les artefacts d'anciennes versions. On filtre explicitement sur
+  // la version en cours pour ne jamais republier un ancien binaire par erreur.
   const files = fs.readdirSync(bundleDir)
-  const setupExe = files.find((f) => f.endsWith('-setup.exe'))
+  const setupExe = files.find((f) => f.endsWith('-setup.exe') && f.includes(`_${version}_`))
   const sigFile = files.find((f) => f === `${setupExe}.sig`)
   if (!setupExe || !sigFile) {
-    console.error(`Artefacts introuvables dans ${bundleDir}. Contenu :`, files)
+    console.error(`Artefacts introuvables pour la version ${version} dans ${bundleDir}. Contenu :`, files)
     process.exit(1)
   }
   const signature = fs.readFileSync(path.join(bundleDir, sigFile), 'utf8').trim()
