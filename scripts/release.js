@@ -91,7 +91,9 @@ function main() {
     platforms: {
       'windows-x86_64': {
         signature,
-        url: `https://github.com/${REPO}/releases/download/v${version}/${encodeURIComponent(setupExe)}`,
+        // GitHub remplace les espaces du nom d'asset par des points au téléversement :
+        // l'URL du manifeste doit refléter le nom réellement stocké, pas l'encodage %20.
+        url: `https://github.com/${REPO}/releases/download/v${version}/${setupExe.replace(/ /g, '.')}`,
       },
     },
   }
