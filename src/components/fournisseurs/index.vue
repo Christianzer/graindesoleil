@@ -34,6 +34,7 @@
               :items="fournisseurs"
               :fields="fields"
               :filter="filter"
+            @filtered="onFiltered"
               :current-page="currentPage"
               :per-page="perPage"
           >
@@ -124,7 +125,7 @@ export default {
       ],
       fieldsAppro: [
         { key: 'code_appro', label: 'Code' },
-        { key: 'date_appro', label: 'Date' },
+        { key: 'date_appro', label: 'Date', formatter: (v) => this.$dateFr(v) },
         { key: 'montant_total', label: 'Montant' },
         { key: 'verse', label: 'Versé' },
         { key: 'actions' },
@@ -138,6 +139,10 @@ export default {
     })
   },
   methods: {
+    onFiltered(filteredItems) {
+      this.totalRows = filteredItems.length
+      this.currentPage = 1
+    },
     async fetchFournisseurs() {
       this.loader = false
       const api = `${API_BASE_URL}/api/fournisseurs`

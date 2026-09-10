@@ -7,7 +7,7 @@
     "frontendDist": "../dist",
     "devUrl": "http://localhost:8080",
     "beforeDevCommand": "yarn serve",
-    "beforeBuildCommand": "node scripts/prepare-tauri-resources.js && yarn build"
+    "beforeBuildCommand": "yarn build"
   },
   "app": {
     "windows": [
@@ -36,10 +36,6 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "resources": {
-      "resources-staging/php/": "php",
-      "resources-staging/backend/": "backend"
-    },
     "windows": {
       "nsis": {
         "installMode": "both"

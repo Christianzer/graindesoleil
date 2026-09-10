@@ -45,6 +45,7 @@
               :current-page="currentPage"
               :per-page="perPage"
               :filter="filter"
+            @filtered="onFiltered"
           >
             <template v-slot:cell(consulter)="row">
               <b-button
@@ -152,6 +153,10 @@ export default {
     }
   },
   methods: {
+    onFiltered(filteredItems) {
+      this.totalRows = filteredItems.length
+      this.currentPage = 1
+    },
     async fetchProduits(){
       this.loader = false
       let api = `${API_BASE_URL}/api/produits`

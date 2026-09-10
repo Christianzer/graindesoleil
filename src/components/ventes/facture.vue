@@ -141,7 +141,7 @@ import moment from "moment";
 import API_BASE_URL from "@/api/config.js";
 import PageHeader from "@/components/ui/PageHeader.vue";
 import flow from "@/store/flow";
-import { ouvrirDocument } from "@/utils/print.js";
+import { imprimerDocument } from "@/utils/print.js";
 export default {
   name: "facture",
   components: { PageHeader },
@@ -183,8 +183,7 @@ export default {
     },
 
     async imprimer(code_facture){
-      let api_data = `${API_BASE_URL}/api/imprimer_factures_perso/${code_facture}`
-      ouvrirDocument(api_data);
+      imprimerDocument("bl", code_facture);
     },
   },
 

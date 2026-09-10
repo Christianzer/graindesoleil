@@ -22,7 +22,7 @@
               class="text-uppercase font-weight-bold text-danger"
               label="Type de paiement"
           >
-            <b-form-select class="text-uppercase font-weight-bold" v-model="selected" :options="options"></b-form-select>
+            <search-select class="text-uppercase font-weight-bold" v-model="selected" :options="options"></search-select>
           </b-form-group>
         </div>
       </div>
@@ -110,7 +110,7 @@
               class="text-uppercase font-weight-bold text-danger"
               label="Type de reseau"
           >
-            <b-form-select v-model="selectedReseau" class="text-uppercase font-weight-bold" :options="optionsReseau"></b-form-select>
+            <search-select v-model="selectedReseau" class="text-uppercase font-weight-bold" :options="optionsReseau"></search-select>
           </b-form-group>
         </div>
         <div class="col-md-4">

@@ -32,6 +32,7 @@
               :items="all_commande"
               :fields="fields"
               :filter="filter"
+            @filtered="onFiltered"
               :current-page="currentPage"
               :per-page="perPage"
           >
@@ -137,6 +138,10 @@ export default {
     })
   },
   methods: {
+    onFiltered(filteredItems) {
+      this.totalRows = filteredItems.length
+      this.currentPage = 1
+    },
     async listes(){
       this.isLoading = false
       var id = this.$route.params.id

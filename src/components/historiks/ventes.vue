@@ -31,6 +31,7 @@
               :items="all_commande"
               :fields="fields"
               :filter="filter"
+            @filtered="onFiltered"
               :current-page="currentPage"
               :per-page="perPage"
           >
@@ -70,7 +71,7 @@
 import API_BASE_URL from "@/api/config.js";
 import PageHeader from "@/components/ui/PageHeader.vue";
 import flow from "@/store/flow";
-import { ouvrirDocument } from "@/utils/print.js";
+import { imprimerDocument } from "@/utils/print.js";
 const axios = require('axios')
 export default {
   name: "index",
@@ -111,6 +112,10 @@ export default {
     this.listes()
   },
   methods: {
+    onFiltered(filteredItems) {
+      this.totalRows = filteredItems.length
+      this.currentPage = 1
+    },
     async listes(){
       var id = flow.getClients().id
       this.isLoading = false
@@ -136,8 +141,7 @@ export default {
       this.$router.push({ name: 'factures_avoir', params: { code_commande: item.code_commande, montant: item.montant_total_ttc } })
     },
     async imprimer_facture(code_facture){
-      let api_data = `${API_BASE_URL}/api/imprimer_factures/${code_facture}`
-      ouvrirDocument(api_data);
+      imprimerDocument('bl', code_facture);
     }
   },
 

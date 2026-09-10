@@ -34,7 +34,7 @@
             <div class="col-md-4">
               <b-form-group
                   label="Option 1">
-                <b-form-select v-model="formData.type_rapport" :options="options"></b-form-select>
+                <search-select v-model="formData.type_rapport" :options="options"></search-select>
               </b-form-group>
             </div>
           </div>
@@ -42,26 +42,26 @@
             <div class="col-md-4" v-if="formData.type_rapport === 1">
               <b-form-group
                   label="Option 2">
-                <b-form-select v-model="formData.detail_rapport" :options="options2"></b-form-select>
+                <search-select v-model="formData.detail_rapport" :options="options2"></search-select>
               </b-form-group>
             </div>
             <div class="col-md-4" v-if="formData.detail_rapport === 2">
               <b-form-group
                   label="Factures">
-                <v-select multiple v-model="factures" :options="optionFacture" :reduce="factures => factures.code_facture" label="code_facture"  placeholder="Choisir factures"/>
+                <search-select multiple v-model="factures" :options="optionFactureSelect" placeholder="Choisir factures"></search-select>
 
               </b-form-group>
             </div>
             <div class="col-md-4" v-if="formData.detail_rapport === 3">
               <b-form-group
                   label="Clients">
-                <v-select multiple v-model="clients" :options="optionClients" :reduce="clients => clients.id" label="nom"  placeholder="Choisir clients"/>
+                <search-select multiple v-model="clients" :options="optionClientsSelect" placeholder="Choisir clients"></search-select>
               </b-form-group>
             </div>
             <div class="col-md-4">
               <b-form-group
                   label="Mode de paiement">
-                <b-form-select class="text-uppercase" v-model="type_paiement" :options="optionTypePaiement"/>
+                <search-select class="text-uppercase" v-model="type_paiement" :options="optionTypePaiement"></search-select>
               </b-form-group>
             </div>
           </div>
@@ -69,7 +69,7 @@
             <div class="col-md-6">
               <b-form-group
                   label="Clients (laisser vide pour tous)">
-                <v-select multiple v-model="clients" :options="optionClients" :reduce="clients => clients.id" label="nom"  placeholder="Choisir un ou plusieurs clients"/>
+                <search-select multiple v-model="clients" :options="optionClientsSelect" placeholder="Choisir un ou plusieurs clients"></search-select>
               </b-form-group>
             </div>
           </div>
@@ -373,7 +373,7 @@ export default {
       this.loader = true
     },
     changerDate(value){
-      return moment(value).format("DD-MM-YYYY")
+      return moment(value).format("DD/MM/YYYY")
     },
     async imprimer(){
       // Un segment d'URL vide (//) est supprimé par le routeur Laravel, ce qui
@@ -401,6 +401,12 @@ export default {
     this.clientFacture()
   },
   computed: {
+    optionClientsSelect() {
+      return this.optionClients.map(c => ({ value: c.id, text: c.nom }))
+    },
+    optionFactureSelect() {
+      return this.optionFacture.map(f => ({ value: f.code_facture, text: f.code_facture }))
+    },
     totalMontantTTC() {
       return this.element.reduce((sum, item) => sum + item.montant_total_factures, 0);
     },

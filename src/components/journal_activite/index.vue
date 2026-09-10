@@ -20,11 +20,11 @@
           </b-col>
           <b-col md="2">
             <label>Module</label>
-            <b-form-select v-model="filtres.module" :options="modulesOptions"></b-form-select>
+            <search-select v-model="filtres.module" :options="modulesOptions"></search-select>
           </b-col>
           <b-col md="2">
             <label>Action</label>
-            <b-form-select v-model="filtres.action" :options="actionsOptions"></b-form-select>
+            <search-select v-model="filtres.action" :options="actionsOptions"></search-select>
           </b-col>
           <b-col md="2">
             <label>Date début</label>
@@ -204,7 +204,10 @@ export default {
     },
     formatDate (value) {
       if (!value) return ''
-      return new Date(value).toLocaleString('fr-FR')
+      const d = new Date(String(value).replace(' ', 'T'))
+      if (isNaN(d.getTime())) return String(value)
+      const p = (n) => String(n).padStart(2, '0')
+      return `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`
     },
     badgeVariant (action) {
       switch (action) {

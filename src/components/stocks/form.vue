@@ -16,13 +16,21 @@
           </b-form-group>
         </div>
       </div>
-      <div class="row">
+      <div class="row" v-if="!editMode">
         <div class="col-md-4">
           <b-form-group
-              label="Quantite produit"
+              label="Quantité de départ (kg)"
           >
             <b-form-input type="number" min="0" v-model="formData.quantite_produit"></b-form-input>
           </b-form-group>
+        </div>
+      </div>
+      <div class="row" v-else>
+        <div class="col-md-12">
+          <b-alert show variant="light" class="mb-0 small">
+            <i class="fas fa-info-circle mr-1"></i>
+            Le stock ne se modifie pas ici : il évolue par les approvisionnements, transformations, livraisons et ventes.
+          </b-alert>
         </div>
       </div>
       <div class="row">

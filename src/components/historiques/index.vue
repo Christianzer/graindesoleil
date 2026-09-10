@@ -26,6 +26,7 @@
               :items="all_commande"
               :fields="fields"
               :filter="filter"
+            @filtered="onFiltered"
               :current-page="currentPage"
               :per-page="perPage"
           >
@@ -110,6 +111,10 @@ export default {
     this.listes()
   },
   methods: {
+    onFiltered(filteredItems) {
+      this.totalRows = filteredItems.length
+      this.currentPage = 1
+    },
     async listes(){
       this.isLoading = false
       let api_data = `${API_BASE_URL}/api/listes_commandes_effectuer`

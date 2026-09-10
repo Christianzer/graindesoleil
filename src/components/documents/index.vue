@@ -16,14 +16,12 @@
               <b-form-radio value="tous">Tous les clients</b-form-radio>
               <b-form-radio value="choisir">Choisir les clients</b-form-radio>
             </b-form-radio-group>
-            <v-select
+            <search-select
               v-if="modeClients === 'choisir'"
               multiple
               v-model="clients"
-              :options="optionClients"
-              :reduce="c => c.id"
-              label="nom"
-              placeholder="Choisir un ou plusieurs clients"/>
+              :options="optionClientsSelect"
+              placeholder="Choisir un ou plusieurs clients"></search-select>
             <div v-else class="obf-info-pill">
               <i class="fas fa-info-circle mr-1"></i> {{ optionClients.length }} client(s) seront inclus
             </div>
@@ -90,6 +88,7 @@
               <b-table
                 head-variant="light" hover responsive
                 :items="factures" :fields="champsFactures" :filter="filterFactures"
+                @filtered="items => { totalFactures = items.length; pageFactures = 1 }"
                 :per-page="perPage" :current-page="pageFactures"
                 show-empty empty-text="Aucune facture pour cette sélection"
                 empty-filtered-text="Aucun résultat pour cette recherche">
@@ -119,8 +118,8 @@
                 </template>
               </b-table>
               <b-pagination
-                v-if="factures.length > perPage"
-                v-model="pageFactures" :total-rows="factures.length" :per-page="perPage"
+                v-if="totalFactures > perPage"
+                v-model="pageFactures" :total-rows="totalFactures" :per-page="perPage"
                 align="center" size="sm" class="my-0"/>
             </b-tab>
 
@@ -136,6 +135,7 @@
               <b-table
                 head-variant="light" hover responsive
                 :items="livraisons" :fields="champsLivraisons" :filter="filterLivraisons"
+                @filtered="items => { totalLivraisons = items.length; pageLivraisons = 1 }"
                 :per-page="perPage" :current-page="pageLivraisons"
                 show-empty empty-text="Aucun bon de livraison pour cette sélection"
                 empty-filtered-text="Aucun résultat pour cette recherche">
@@ -154,8 +154,8 @@
                 </template>
               </b-table>
               <b-pagination
-                v-if="livraisons.length > perPage"
-                v-model="pageLivraisons" :total-rows="livraisons.length" :per-page="perPage"
+                v-if="totalLivraisons > perPage"
+                v-model="pageLivraisons" :total-rows="totalLivraisons" :per-page="perPage"
                 align="center" size="sm" class="my-0"/>
             </b-tab>
           </b-tabs>
@@ -181,7 +181,7 @@
 import API_BASE_URL from "@/api/config.js";
 import PageHeader from "@/components/ui/PageHeader.vue";
 import StatCard from "@/components/ui/StatCard.vue";
-import { ouvrirDocument } from "@/utils/print.js";
+import { ouvrirDocument, imprimerDocument } from "@/utils/print.js";
 const axios = require('axios')
 
 export default {
@@ -203,10 +203,12 @@ export default {
       perPage: 10,
       pageFactures: 1,
       pageLivraisons: 1,
+      totalFactures: 0,
+      totalLivraisons: 0,
       champsFactures: [
         { key: 'code_facture', label: 'N° Facture', sortable: true },
         { key: 'client', label: 'Client' },
-        { key: 'date_facture', label: 'Date', sortable: true },
+        { key: 'date_facture', label: 'Date', sortable: true, formatter: (v) => this.$dateFr(v) },
         { key: 'montant_total_factures', label: 'Montant HT', sortable: true },
         { key: 'montant_total_factures_ttc', label: 'Montant TTC', sortable: true },
         { key: 'type', label: 'Type' },
@@ -215,7 +217,7 @@ export default {
       champsLivraisons: [
         { key: 'code_commande', label: 'N° BL', sortable: true },
         { key: 'client', label: 'Client' },
-        { key: 'date_commande', label: 'Date', sortable: true },
+        { key: 'date_commande', label: 'Date', sortable: true, formatter: (v) => this.$dateFr(v) },
         { key: 'montant_total', label: 'Montant HT', sortable: true },
         { key: 'montant_total_ttc', label: 'Montant TTC', sortable: true },
         { key: 'actions', label: '' },
@@ -224,6 +226,11 @@ export default {
   },
   created() {
     this.chargerClients()
+  },
+  computed: {
+    optionClientsSelect() {
+      return this.optionClients.map(c => ({ value: c.id, text: c.nom }))
+    },
   },
   watch: {
     // « Tous les clients » → on sélectionne tout le monde ; « Choisir » → on repart d'une sélection vide.
@@ -262,16 +269,22 @@ export default {
         if (response.status === 201) {
           this.factures = response.data.factures
           this.livraisons = response.data.livraisons
+          this.totalFactures = this.factures.length
+          this.totalLivraisons = this.livraisons.length
           this.charge = true
         }
       }).catch(err => console.log(err))
       this.loading = false
     },
     imprimerFacture(code) {
-      this.ouvrir(`${API_BASE_URL}/api/imprimer_factures/${code}`, `facture_${code}`)
+      imprimerDocument('bl', code)
     },
     imprimerLivraison(code) {
-      this.ouvrir(`${API_BASE_URL}/api/imprimer_livraison/${code}`, `bl_${code}`)
+      imprimerDocument('bl', code)
+    },
+    // Relevé d'un client sur la période sélectionnée (nouveau moteur pdfmake).
+    imprimerReleveClient(id) {
+      imprimerDocument('releve_client', id, this.seg(this.date_debut), this.seg(this.date_fin))
     },
     // Construit l'URL d'impression groupée pour un type donné (factures | livraisons | tous).
     urlImpression(type) {

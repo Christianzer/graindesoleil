@@ -34,6 +34,7 @@
               :items="listes"
               :fields="fields"
               :filter="filter"
+            @filtered="onFiltered"
               :current-page="currentPage"
               :per-page="perPage"
           >
@@ -121,7 +122,8 @@ export default {
         },
         { key: 'date_entre',
           label: 'Date',
-          sortable: true
+          sortable: true,
+          formatter: (v) => this.$dateFr(v)
         },
         { key: 'libelle_entre_caisse',
           label: 'Libelle / Source',
@@ -162,6 +164,10 @@ export default {
 
   },
   methods: {
+    onFiltered(filteredItems) {
+      this.totalRows = filteredItems.length
+      this.currentPage = 1
+    },
     hideModal() {
       this.$refs['mymodal'].hide()
     },

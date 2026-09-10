@@ -1,5 +1,8 @@
 <template>
-  <div class="container-fluid p-3">
+  <UsineDashboard v-if="roleUsine" />
+  <ResponsableDashboard v-else-if="roleResponsable" />
+  <CaisseDashboard v-else-if="roleCaisse" />
+  <div v-else class="container-fluid p-3">
     <PageHeader title="Tableau de bord" subtitle="Vue d'ensemble de l'activité" crumb="Grains Moulus">
       <template #actions>
         <b-button variant="outline-primary" @click="fetchdata">
@@ -89,6 +92,7 @@
                   :items="detailReapproRows"
                   :fields="[{ key:'date', label:'Date' }, { key:'quantite', label:'Réappro', class:'text-right' }]"
                   show-empty empty-text="Aucun réapprovisionnement">
+                  <template #cell(date)="row">{{ row.value | dateFr }}</template>
                   <template #cell(quantite)="row"><span class="text-success font-weight-bold">+ {{ nf(row.item.quantite) }}</span></template>
                 </b-table>
                 <div v-if="detailProduit" class="text-right font-weight-bold mt-2">
@@ -149,11 +153,14 @@ import API_BASE_URL from '@/api/config.js'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import flow from "@/store/flow";
 import StatCard from '@/components/ui/StatCard.vue'
+import UsineDashboard from '@/components/usine/dashboard.vue'
+import ResponsableDashboard from '@/components/responsable/dashboard.vue'
+import CaisseDashboard from '@/components/caisse/dashboard.vue'
 const axios = require('axios')
 //import moment from "moment";
 export default {
   name: "index",
-  components: { PageHeader, StatCard },
+  components: { PageHeader, StatCard, UsineDashboard, ResponsableDashboard, CaisseDashboard },
   data(){
     return {
       isLoading : false,
@@ -268,6 +275,35 @@ export default {
     }
   },
   computed: {
+    // Rôle usine (commercial.type_user === 4) : on affiche le tableau de bord
+    // usine à la place du tableau de bord ventes.
+    roleUsine() {
+      try {
+        const raw = localStorage.getItem('LoggedUser')
+        return !!raw && Number(JSON.parse(raw).type_user) === 4
+      } catch (e) {
+        return false
+      }
+    },
+    // Responsable (type_user === 3) : tableau de bord dédié (analytique + réconciliation).
+    // L'admin (1) garde le tableau de bord ventes ci-dessous.
+    roleResponsable() {
+      try {
+        const raw = localStorage.getItem('LoggedUser')
+        return !!raw && Number(JSON.parse(raw).type_user) === 3
+      } catch (e) {
+        return false
+      }
+    },
+    // Caisse (type_user === 5) : tableau de bord dédié (trésorerie du jour).
+    roleCaisse() {
+      try {
+        const raw = localStorage.getItem('LoggedUser')
+        return !!raw && Number(JSON.parse(raw).type_user) === 5
+      } catch (e) {
+        return false
+      }
+    },
     // Colonnes : Produit, Départ, Total réappro (cliquable), Sortie, Reste.
     champsRecon(){
       const money = v => new Intl.NumberFormat('fr-FR').format(Math.floor(Number(v) || 0))
@@ -324,6 +360,7 @@ export default {
   },
   created() {
     flow.clearSale()
+    if (this.roleUsine || this.roleResponsable || this.roleCaisse) return
     this.fetchdata()
     this.fetchRecon()
   },

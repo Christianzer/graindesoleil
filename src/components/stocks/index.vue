@@ -34,6 +34,7 @@
               :items="all_produits"
               :fields="fields"
               :filter="filter"
+            @filtered="onFiltered"
               :current-page="currentPage"
               :per-page="perPage"
           >
@@ -128,7 +129,7 @@ export default {
         },
         {
           key:'quantite_produit',
-          label:'Quantite disponible',
+          label:'Quantité disponible (kg)',
           sortable:true,
         },
 
@@ -151,6 +152,10 @@ export default {
 
   },
   methods: {
+    onFiltered(filteredItems) {
+      this.totalRows = filteredItems.length
+      this.currentPage = 1
+    },
     openModal() {
       this.$refs.modal.editMode = false
       this.$refs.modal.showModal()
@@ -167,6 +172,7 @@ export default {
         let statut = response.status
         if (statut === 201) {
           this.all_produits = response.data.element
+          this.totalRows = this.all_produits.length
         }
       }).catch((err) => {
         console.log(err)

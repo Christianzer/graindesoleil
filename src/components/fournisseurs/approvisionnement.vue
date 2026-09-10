@@ -5,7 +5,7 @@
     <div class="card shadow mb-4">
       <div class="card-body">
         <b-form-group label="Fournisseur">
-          <b-form-select v-model="fournisseurId" :options="fournisseurOptions"></b-form-select>
+          <search-select v-model="fournisseurId" :options="fournisseurOptions"></search-select>
         </b-form-group>
         <b-form-group label="Date de l'approvisionnement">
           <b-form-datepicker locale="fr-FR" v-model="dateAppro"></b-form-datepicker>
@@ -14,14 +14,14 @@
         <table class="table table-bordered">
           <tr>
             <th>Produit</th>
-            <th>Quantité livrée</th>
+            <th>Quantité livrée (kg)</th>
             <th>Prix d'achat unitaire</th>
             <th>Total</th>
             <th></th>
           </tr>
           <tr v-for="(ligne, index) in lignes" :key="index">
             <td style="min-width:220px;">
-              <b-form-select v-model="ligne.code_produit" :options="produitOptions"></b-form-select>
+              <search-select v-model="ligne.code_produit" :options="optionsPourLigne(index)"></search-select>
             </td>
             <td>
               <b-form-input type="number" min="1" v-model="ligne.quantite"></b-form-input>
@@ -40,8 +40,11 @@
           </tr>
         </table>
 
-        <b-button variant="outline-primary" class="mb-3" @click="ajouterLigne">
+        <b-button variant="outline-primary" class="mb-3 mr-2" @click="ajouterLigne">
           <i class="fas fa-plus mr-1"></i> Ajouter une ligne
+        </b-button>
+        <b-button variant="outline-secondary" class="mb-3" @click="$refs.modalNouveauProduit.show()">
+          <i class="fas fa-box-open mr-1"></i> Nouveau produit
         </b-button>
 
         <div class="text-right">
@@ -53,6 +56,19 @@
         </b-button>
       </div>
     </div>
+
+    <b-modal ref="modalNouveauProduit" hide-footer title="Nouveau produit">
+      <b-form-group label="Libellé du produit">
+        <b-form-input v-model="nouveauProduitLibelle" @keyup.enter="creerProduit"></b-form-input>
+      </b-form-group>
+      <p class="text-muted small">
+        Le code est généré automatiquement. Les prix de vente sont renseignés
+        ensuite par le responsable.
+      </p>
+      <b-button variant="success" block :disabled="Loading || !nouveauProduitLibelle.trim()" @click="creerProduit">
+        Créer le produit
+      </b-button>
+    </b-modal>
   </div>
 </template>
 
@@ -73,6 +89,7 @@ export default {
       fournisseurId: null,
       dateAppro: moment().format('YYYY-MM-DD'),
       lignes: [{ code_produit: null, quantite: 1, prix_achat_unitaire: 0 }],
+      nouveauProduitLibelle: '',
     }
   },
   computed: {
@@ -90,8 +107,38 @@ export default {
     }
   },
   methods: {
+    // Options produit d'une ligne : on retire les produits déjà choisis sur
+    // les autres lignes (on garde la sélection de la ligne courante).
+    optionsPourLigne(index) {
+      const prisAilleurs = this.lignes
+        .filter((_, i) => i !== index)
+        .map(l => l.code_produit)
+        .filter(Boolean)
+      return this.produits
+        .filter(p => !prisAilleurs.includes(p.code_produit))
+        .map(p => ({ value: p.code_produit, text: p.libelle_produit }))
+    },
     ajouterLigne() {
       this.lignes.push({ code_produit: null, quantite: 1, prix_achat_unitaire: 0 })
+    },
+    async creerProduit() {
+      const libelle = this.nouveauProduitLibelle.trim()
+      if (this.Loading || !libelle) return
+      this.Loading = true
+      await axios.post(`${API_BASE_URL}/api/produits`, { libelle_produit: libelle }).then(response => {
+        if (response.status === 201 && response.data && response.data.code_produit) {
+          const p = { code_produit: response.data.code_produit, libelle_produit: response.data.libelle_produit }
+          this.produits.push(p)
+          this.lignes.push({ code_produit: p.code_produit, quantite: 1, prix_achat_unitaire: 0 })
+          this.nouveauProduitLibelle = ''
+          this.$refs.modalNouveauProduit.hide()
+          this.$bvToast.toast('Produit créé : ' + p.libelle_produit + ' (' + p.code_produit + ')', { title: 'Produit', variant: 'success', solid: true })
+        }
+      }).catch((err) => {
+        console.log(err)
+        this.$bvToast.toast('Erreur lors de la création du produit.', { title: 'Produit', variant: 'danger', solid: true })
+      })
+      this.Loading = false
     },
     async valider() {
       if (this.Loading) return

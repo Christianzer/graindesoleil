@@ -25,7 +25,7 @@ yarn build
 yarn tauri:build
 ```
 
-En dev, le backend Laravel n'est PAS géré par Tauri : lancez-le vous-même (`php -S 127.0.0.1:8000 -t . index.php` depuis `gstockgrainsmoulus/`, ou Apache/Laragon) — le proxy webpack (`vue.config.js`) pointe dessus. En production, `src-tauri/` embarque et démarre lui-même PHP + Laravel + SQLite (voir plus bas).
+En dev, le backend Laravel n'est PAS géré par Tauri : lancez-le vous-même (`php -S 127.0.0.1:8000 -t . index.php` depuis `gstockgrainsmoulus/`, ou Apache/Laragon) — le proxy webpack (`vue.config.js`) pointe dessus. En production, l'app se connecte au backend hébergé en ligne (`https://api.grainsmoulus.succesemaster.com`, voir `src/api/config.js`) — plus de sidecar PHP embarqué (voir plus bas).
 
 ## Architecture
 
@@ -38,21 +38,17 @@ En dev, le backend Laravel n'est PAS géré par Tauri : lancez-le vous-même (`p
 ### Points d'Entrée
 - `src/main.js` - Initialisation Vue, plugins globaux (BootstrapVue, axios, vue-select)
 - `src-tauri/src/lib.rs` - Point d'entrée Rust, cycle de vie de l'app
-- `src-tauri/src/backend.rs` - Démarrage/arrêt du backend embarqué (sidecar PHP + Laravel + SQLite), équivalent Rust de l'ancien `background.js` Electron
-- `scripts/prepare-tauri-resources.js` - Copie filtrée de `php-runtime/` et `gstockgrainsmoulus/` dans `src-tauri/resources-staging/` avant chaque build (référencé par `bundle.resources` dans `tauri.conf.json`)
+- `src-tauri/src/backend.rs` - Ancien sidecar embarqué (PHP + Laravel + SQLite), équivalent Rust de l'ancien `background.js` Electron. **Désactivé** depuis le passage au backend en ligne : le module reste dans le dépôt (compilé avec `#[allow(dead_code)]`) mais n'est plus appelé par `lib.rs`, au cas où on revienne un jour à l'embarqué.
+- `scripts/prepare-tauri-resources.js` - Ancien script de copie de `php-runtime/` et `gstockgrainsmoulus/` dans `src-tauri/resources-staging/`. **Plus appelé** par `beforeBuildCommand` (`tauri.conf.json`) ni par le bloc `bundle.resources` (retiré) depuis le passage au backend en ligne.
 - `src/utils/print.js` - Point d'impression unique du frontend (`ouvrirDocument()`) : ouvre l'URL du document, désormais généré en PDF côté serveur (voir `gstockgrainsmoulus/app/Http/Middleware/RenderAsPdf.php`) — Tauri n'a pas d'équivalent au `printToPDF()` d'Electron
 
-### Build : dépendances externes au dépôt
-Ce dépôt seul ne suffit pas à builder : `scripts/prepare-tauri-resources.js` attend deux dossiers **frères** de `grainsmoulusv2/` sur la machine de build (non versionnés ici) :
-- `../gstockgrainsmoulus/` — le backend Laravel (dépôt séparé)
-- `../php-runtime/` — copie portable de PHP 8.2.28 avec extensions (sqlite, curl, mbstring...)
-
-C'est pourquoi il n'y a pas de CI GitHub Actions : reproduire ces deux dépendances sur un runner demanderait de fusionner les dépôts ou d'héberger le runtime PHP séparément. Les builds de release se font en local via `node scripts/release.js <version>` (voir README), qui build, signe et publie sur GitHub Releases (dépôt public `Christianzer/graindesoleil`, utilisé comme point de distribution des mises à jour par `@tauri-apps/plugin-updater`).
+### Build
+Depuis le passage au backend en ligne, `beforeBuildCommand` (`tauri.conf.json`) ne fait plus que `yarn build` — `scripts/prepare-tauri-resources.js` et les dossiers frères `../gstockgrainsmoulus/` / `../php-runtime/` ne sont plus requis pour builder. Les builds de release se font en local via `node scripts/release.js <version>` (voir README), qui build, signe et publie sur GitHub Releases (dépôt public `Christianzer/graindesoleil`, utilisé comme point de distribution des mises à jour par `@tauri-apps/plugin-updater`).
 
 La clé privée de signature (`grainsmoulus-updater.key`, générée par `tauri signer generate`) vit hors du dépôt — ne jamais la committer. `TAURI_SIGNING_PRIVATE_KEY_PATH` doit pointer dessus avant de lancer `release.js`.
 
-### Piège chemins Windows (important)
-`app.path().resource_dir()` / `app_data_dir()` de Tauri renvoient des chemins "étendus" préfixés `\\?\` sur Windows. PHP ne comprend pas ce préfixe dans ses propres arguments CLI (`-d extension_dir=...`, `-t ...`) : il échoue silencieusement à charger toutes ses extensions. Toujours passer ces chemins par `display_path()` (dans `backend.rs`) avant de les donner à PHP.
+### Piège chemins Windows (historique, code désactivé)
+`app.path().resource_dir()` / `app_data_dir()` de Tauri renvoient des chemins "étendus" préfixés `\\?\` sur Windows. PHP ne comprend pas ce préfixe dans ses propres arguments CLI (`-d extension_dir=...`, `-t ...`) : il échoue silencieusement à charger toutes ses extensions. Pertinent uniquement si `backend.rs` (sidecar PHP embarqué, actuellement désactivé) est un jour réactivé — toujours passer ces chemins par `display_path()` avant de les donner à PHP.
 
 ### Structure du Projet
 - `src/components/` - Modules fonctionnels organisés par domaine :

@@ -32,6 +32,7 @@
                   :items="displayRows"
                   :fields="fields"
                   :filter="filter"
+            @filtered="onFiltered"
                   :current-page="currentPage"
                   :per-page="perPage"
           >
@@ -159,7 +160,7 @@
   import API_BASE_URL from '@/api/config.js'
   import flow from "@/store/flow";
   import PageHeader from "@/components/ui/PageHeader.vue";
-  import { ouvrirDocument } from "@/utils/print.js";
+  import { ouvrirDocument, imprimerDocument } from "@/utils/print.js";
   const axios = require('axios')
   export default {
     name: "index",
@@ -189,6 +190,10 @@
       this.listes()
     },
     methods: {
+    onFiltered(filteredItems) {
+      this.totalRows = filteredItems.length
+      this.currentPage = 1
+    },
       retour(){
         this.$router.push({ name: 'commande_clients' })
       },
@@ -225,15 +230,14 @@
         if (item.statut_prod === 2) return 'table-success'
       },
       async imprimer_facture(code_facture){
-        let api_data = `${API_BASE_URL}/api/imprimer_factures/`+code_facture
-        ouvrirDocument(api_data);
+        imprimerDocument('bl', code_facture);
       },
 
       // Imprime directement le(s) document(s) d'avoir liés à un bon de livraison.
       imprimer_avoirs(item){
         const list = Array.isArray(item.avoirs) ? item.avoirs : []
         if (list.length === 0) return
-        list.forEach(av => this.imprimer_facture(av.code_facture))
+        list.forEach(av => imprimerDocument('avoir', av.code_facture))
       },
 
       async imprimer_recapitulatif(){

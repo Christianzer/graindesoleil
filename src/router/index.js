@@ -33,6 +33,12 @@ const routes = [
     component: login
   },
   {
+    // Prévisualisation des documents PDF (données d'exemple, sans auth).
+    path: '/dev/documents',
+    name: 'dev_documents',
+    component: () => import('@/components/dev/documents.vue')
+  },
+  {
     path: '/',
     beforeEnter: (to, from, next) => {
       const userString = localStorage.getItem('LoggedUser');
@@ -68,6 +74,11 @@ const routes = [
         path: '/commercials',
         name: 'commercial',
         component : () => import('@/components/commercial/index.vue')
+      },
+      {
+        path: '/commerciaux',
+        name: 'commerciaux',
+        component : () => import('@/components/commerciaux/index.vue')
       },
       {
         path: '/stocks',
@@ -193,6 +204,21 @@ const routes = [
         name: 'approvisionnement',
         path: '/approvisionnement',
         component: () => import('@/components/fournisseurs/approvisionnement.vue')
+      },
+      {
+        path: '/transformations',
+        name: 'transformations',
+        component: () => import('@/components/usine/transformations.vue')
+      },
+      {
+        path: '/demandes',
+        name: 'demandes',
+        component: () => import('@/components/demandes/index.vue')
+      },
+      {
+        path: '/commercial-prises',
+        name: 'commercial_prises',
+        component: () => import('@/components/commercial_prises/index.vue')
       },
       {
         name: 'parametres',

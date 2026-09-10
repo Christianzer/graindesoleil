@@ -167,7 +167,7 @@ import moment from "moment";
 import API_BASE_URL from "@/api/config.js";
 import PageHeader from "@/components/ui/PageHeader.vue";
 import flow from "@/store/flow";
-import { ouvrirDocument } from "@/utils/print.js";
+import { imprimerDocument } from "@/utils/print.js";
 //const electron = require('electron')
 //const BrowserWindow = electron.remote.BrowserWindow;
 export default {
@@ -209,8 +209,7 @@ export default {
     },
 
     async imprimer(code_commande) {
-      const api_data = `${API_BASE_URL}/api/imprimer_recu/${code_commande}`
-      ouvrirDocument(api_data)
+      imprimerDocument("recu", code_commande)
     }
 
   },

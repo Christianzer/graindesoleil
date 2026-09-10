@@ -35,9 +35,14 @@
               :items="all_clients"
               :fields="fields"
               :filter="filter"
+            @filtered="onFiltered"
               :current-page="currentPage"
               :per-page="perPage"
           >
+            <template v-slot:cell(type_user)="row">
+              {{ roleLabel(row.item.type_user) }}
+            </template>
+
             <template v-slot:cell(actions)="row">
               <b-button
                   size="sm"
@@ -52,7 +57,7 @@
                   size="sm"
                   variant="outline-danger"
                   class="mr-1"
-                  @click="supprimer(row.item.id)"
+                  @click="supprimer(row.item.id_com)"
               >
                 supprimer
               </b-button>
@@ -78,6 +83,7 @@ import API_BASE_URL from '@/api/config.js'
 const axios = require('axios')
 import Form from "./form";
 import flow from "@/store/flow";
+import { ROLE_LABELS } from '@/utils/permissions'
 export default {
   name: "index",
   data(){
@@ -117,6 +123,11 @@ export default {
           sortable:true,
         },
         {
+          key: 'type_user',
+          label: 'Rôle',
+          sortable: true,
+        },
+        {
           key: 'actions'
         }
       ]
@@ -134,6 +145,10 @@ export default {
 
   },
   methods: {
+    onFiltered(filteredItems) {
+      this.totalRows = filteredItems.length
+      this.currentPage = 1
+    },
     async fetchclients(){
       this.loader = false
       let api = `${API_BASE_URL}/api/commercial`
@@ -156,6 +171,9 @@ export default {
       this.$refs.modal.selectedTA = dataPat
       this.$refs.modal.editMode = true
       this.$refs.modal.showModal()
+    },
+    roleLabel(typeUser) {
+      return ROLE_LABELS[typeUser] || 'Inconnu'
     },
     async supprimer(code) {
       let urlapi = `${API_BASE_URL}/api/commercial/${code}`

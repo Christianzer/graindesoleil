@@ -86,6 +86,7 @@
             :items="clients"
             :fields="clientFields"
             :filter="filterClient"
+            @filtered="onFilteredClients"
             :per-page="perPage"
             :current-page="pageClient"
             :tbody-tr-class="rowClientClass"
@@ -100,7 +101,7 @@
               </b-button>
             </template>
           </b-table>
-          <b-pagination v-if="clients.length > perPage" v-model="pageClient" :total-rows="clients.length" :per-page="perPage" size="sm" />
+          <b-pagination v-if="totalRowsClients > perPage" v-model="pageClient" :total-rows="totalRowsClients" :per-page="perPage" size="sm" />
         </template>
 
         <!-- ÉTAPE 2 : Produits -->
@@ -244,7 +245,7 @@ import axios from "axios";
 import moment from "moment";
 import API_BASE_URL from "@/api/config.js";
 import PageHeader from "@/components/ui/PageHeader.vue";
-import { ouvrirDocument } from "@/utils/print.js";
+import { imprimerDocument } from "@/utils/print.js";
 
 export default {
   name: "assistant-vente",
@@ -260,6 +261,7 @@ export default {
       loadingClients: false,
       filterClient: "",
       pageClient: 1,
+      totalRowsClients: 0,
       perPage: 8,
       clientFields: [
         { key: "matricule", label: "Matricule", sortable: true },
@@ -315,6 +317,10 @@ export default {
     },
   },
   methods: {
+    onFilteredClients(filteredItems) {
+      this.totalRowsClients = filteredItems.length
+      this.pageClient = 1
+    },
     money(v) {
       return new Intl.NumberFormat().format(Math.floor(Number(v) || 0));
     },
@@ -342,7 +348,7 @@ export default {
       const url = this.mode === "ht" ? `${API_BASE_URL}/api/clients_ht` : `${API_BASE_URL}/api/clients`;
       try {
         const res = await axios.get(url);
-        if (res.status === 200) this.clients = res.data;
+        if (res.status === 200) { this.clients = res.data; this.totalRowsClients = res.data.length }
       } catch (e) {
         this.$bvToast.toast("Impossible de charger les clients.", { title: "Assistant", variant: "danger", solid: true });
       } finally {
@@ -401,10 +407,7 @@ export default {
     },
     imprimer() {
       if (!this.resultCode) return;
-      const url = this.resultType === "facture"
-        ? `${API_BASE_URL}/api/imprimer_factures/${this.resultCode}`
-        : `${API_BASE_URL}/api/imprimer_livraison/${this.resultCode}`;
-      ouvrirDocument(url);
+      imprimerDocument('bl', this.resultCode);
     },
     recommencer() {
       this.step = 0;

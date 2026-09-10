@@ -52,6 +52,13 @@
           </b-form-group>
         </div>
       </div>
+      <div class="row">
+        <div class="col-md-6">
+          <b-form-group label="Rôle *">
+            <search-select v-model="formData.type_user" :options="roleOptions"></search-select>
+          </b-form-group>
+        </div>
+      </div>
       <div class="row justify-content-end">
         <b-button variant="primary mr-1" type="submit" :disabled="isSubmitting">enregistrer</b-button>
         <b-button variant="danger mr-1" @click="closeModal">fermer</b-button>
@@ -85,13 +92,46 @@ export default {
         login: "",
         mdp: "",
         contact: "",
+        type_user: null,
       }
     }
+  },
+  computed: {
+    roleConnecte() {
+      try {
+        return Number(JSON.parse(localStorage.getItem('LoggedUser') || '{}').type_user)
+      } catch (e) {
+        return null
+      }
+    },
+    // L'admin peut créer n'importe quel rôle. Le responsable ne peut créer que
+    // des comptes Usine et Caisse. En modification d'un compte Admin/Responsable
+    // existant, son rôle reste affiché (non sélectionnable) pour éviter une
+    // rétrogradation accidentelle.
+    roleOptions() {
+      if (this.roleConnecte === 1) {
+        return [
+          { value: 1, text: 'Admin' },
+          { value: 3, text: 'Responsable' },
+          { value: 4, text: 'Usine' },
+          { value: 5, text: 'Caisse' },
+        ]
+      }
+      const opts = [
+        { value: 4, text: 'Usine' },
+        { value: 5, text: 'Caisse' },
+      ]
+      const actuel = Number(this.formData.type_user)
+      if (this.editMode && (actuel === 1 || actuel === 3)) {
+        opts.unshift({ value: actuel, text: actuel === 1 ? 'Admin' : 'Responsable', disabled: true })
+      }
+      return opts
+    },
   },
   methods: {
     showModal() {
       if (this.editMode === true) {
-        this.selected = this.selectedTA.id
+        this.selected = this.selectedTA.id_com
         this.formData.nom = this.selectedTA.nom
         this.formData.prenoms = this.selectedTA.prenoms
         this.formData.telephone = this.selectedTA.telephone
@@ -99,14 +139,16 @@ export default {
         this.formData.login = this.selectedTA.login
         this.formData.mdp = ''
         this.formData.contact = this.selectedTA.contact
+        this.formData.type_user = this.selectedTA.type_user
       } else {
         this.formData.nom = ''
         this.formData.prenoms = ''
         this.formData.telephone = ''
         this.formData.mail = ''
-        this.formData.login =
-        this.formData.mdp =
+        this.formData.login = ''
+        this.formData.mdp = ''
         this.formData.contact = ''
+        this.formData.type_user = null
       }
       this.$refs['my-modal'].show()
     },
@@ -124,6 +166,7 @@ export default {
         login: this.formData.login,
         mdp: this.formData.mdp,
         contact: this.formData.contact,
+        type_user: this.formData.type_user,
       }
       if (this.editMode === true){
         await axios.put(this.apidata+'/'+this.selected,data)

@@ -26,7 +26,7 @@
           <label class="obf-login__label">Mot de passe</label>
           <input type="password" v-model="form.password" class="form-control form-control-lg" placeholder="••••••••" required>
         </div>
-        <button type="submit" class="btn btn-primary btn-block btn-lg text-uppercase">Connexion</button>
+        <button type="submit" class="btn btn-primary btn-block btn-lg text-uppercase" :disabled="submitting">Connexion</button>
       </form>
     </div>
   </div>
@@ -35,6 +35,7 @@
 <script>
 import axios from 'axios'
 import API_BASE_URL from '@/api/config'
+import { getPermissionsForRole } from '@/utils/permissions'
 
 export default {
   data () {
@@ -44,37 +45,39 @@ export default {
         password: ''
       },
       error: null,
-      // Utilisateur unique Grains Moulus. Un seul type de document (Bon de Livraison) :
-      // pas de permissions HT/proforma/certification FNE.
-      users: {
-        admin: {
-          password: 'admin2026',
-          role: 'admin',
-          permissions: ['dashboard', 'clients', 'stocks', 'ventes', 'factures_users', 'panier_facture', 'listes_commandes', 'factures_avoir', 'facture', 'livraison', 'historiques', 'caisses', 'historiques_factures', 'historiques_livraisons', 'recu', 'rapport_caisse', 'documents_clients', 'ventes_historiques', 'commande_clients', 'appro', 'decaissement', 'historiques_encaissement', 'historiques_encaissement_clients', 'fournisseurs', 'approvisionnement', 'commercial', 'journal_activite', 'parametres']
-        }
-      }
+      submitting: false,
     }
   },
   methods: {
     async login_user () {
-      this.error = null;
+      this.error = null
+      if (this.submitting) return
+      this.submitting = true
 
-      // Check if user exists and password is correct
-      const user = this.users[this.form.username];
-      if (user && user.password === this.form.password) {
-        // Store user info in localStorage
+      try {
+        const response = await axios.post(`${API_BASE_URL}/api/login`, {
+          login: this.form.username,
+          password: this.form.password,
+        })
+
+        const compte = response.data
         const userInfo = {
-          username: this.form.username,
-          role: user.role,
-          permissions: user.permissions
-        };
-        localStorage.setItem('LoggedUser', JSON.stringify(userInfo));
-        this.logConnexion(this.form.username, true);
-        this.$router.push({ name: 'dashboard' });
-      } else {
-        this.error = 'Nom d\'utilisateur ou mot de passe incorrect';
-        this.logConnexion(this.form.username, false);
+          username: compte.login,
+          id_com: compte.id_com,
+          nom: compte.nom,
+          prenoms: compte.prenoms,
+          type_user: compte.type_user,
+          permissions: getPermissionsForRole(compte.type_user),
+        }
+        localStorage.setItem('LoggedUser', JSON.stringify(userInfo))
+        this.logConnexion(this.form.username, true)
+        this.$router.push({ name: 'dashboard' })
+      } catch (err) {
+        this.error = 'Nom d\'utilisateur ou mot de passe incorrect'
+        this.logConnexion(this.form.username, false)
       }
+
+      this.submitting = false
     },
     logConnexion (utilisateur, succes) {
       // Fire-and-forget : ne doit jamais bloquer ni casser le flux de connexion.
