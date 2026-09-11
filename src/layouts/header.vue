@@ -3,7 +3,7 @@
     <div class="obf-topbar-title">Grains Moulus — Stock &amp; Caisse</div>
     <ul class="navbar-nav ml-auto">
       <li class="nav-item">
-        <div class="obf-user-chip" v-if="user">
+        <div class="obf-user-chip" v-if="user" role="button" title="Changer mon mot de passe" @click="$refs.changerMdp.showModal()">
           <div class="obf-user-chip__avatar">{{ initiale }}</div>
           <div class="obf-user-chip__info">
             <div class="obf-user-chip__name">{{ user.username }}</div>
@@ -12,12 +12,16 @@
         </div>
       </li>
     </ul>
+    <changer-mot-de-passe-modal ref="changerMdp"></changer-mot-de-passe-modal>
   </nav>
 </template>
 
 <script>
+import ChangerMotDePasseModal from '@/components/commercial/ChangerMotDePasseModal.vue'
+
 export default {
   name: 'Header',
+  components: { ChangerMotDePasseModal },
   data() {
     return { user: null }
   },
@@ -49,6 +53,7 @@ export default {
   border: 1px solid #dfe1fb;
   border-radius: 999px;
   padding: 4px 14px 4px 4px;
+  cursor: pointer;
 }
 .obf-user-chip__avatar {
   width: 36px; height: 36px;
