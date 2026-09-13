@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "Grains Moulus",
-  "version": "1.4.4",
+  "productName": "Café Fortuna",
+  "version": "1.4.5",
   "identifier": "ci.grainsmoulus.stock",
   "build": {
     "frontendDist": "../dist",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "GRAINS MOULUS - STOCK ET CAISSE",
+        "title": "CAFÉ FORTUNA - STOCK ET CAISSE",
         "width": 800,
         "height": 600,
         "resizable": true,
