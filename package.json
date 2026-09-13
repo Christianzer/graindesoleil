@@ -1,6 +1,6 @@
 {
-  "name": "grains-moulus-stock",
-  "version": "1.4.5",
+  "name": "cafe-fortuna-stock",
+  "version": "1.4.6",
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve",

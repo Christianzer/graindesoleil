@@ -1,8 +1,8 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Café Fortuna",
-  "version": "1.4.5",
-  "identifier": "ci.grainsmoulus.stock",
+  "version": "1.4.6",
+  "identifier": "ci.cafefortuna.stock",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:8080",
