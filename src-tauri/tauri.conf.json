@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "Café Fortuna",
-  "version": "1.4.6",
+  "productName": "Cafe Fortuna",
+  "version": "1.4.7",
   "identifier": "ci.cafefortuna.stock",
   "build": {
     "frontendDist": "../dist",
