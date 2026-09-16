@@ -54,8 +54,12 @@
 
     <b-row>
       <b-col md="6">
-        <b-form-group label="Montant effectivement versé (FCFA)" description="Peut être inférieur au total déclaré (paiement partiel).">
-          <b-form-input type="number" min="0" v-model="montantVerse"></b-form-input>
+        <b-form-group label="Montant effectivement versé (FCFA)" description="Obligatoire — peut être inférieur au total déclaré (paiement partiel), mais pas nul.">
+          <b-form-input type="number" min="0" v-model="montantVerse"
+                        :state="montantVerse !== null && montantVerse !== '' && Number(montantVerse) <= 0 ? false : null"></b-form-input>
+          <small v-if="montantVerse !== null && montantVerse !== '' && Number(montantVerse) <= 0" class="text-danger">
+            Le montant versé est obligatoire pour enregistrer l'encaissement.
+          </small>
         </b-form-group>
       </b-col>
       <b-col md="6">
@@ -107,7 +111,8 @@ export default {
     },
     peutValider() {
       return this.commercial
-        && (this.lignesFiche.some(l => l.code_produit && Number(l.quantite) > 0) || Number(this.montantVerse) > 0)
+        && this.lignesFiche.some(l => l.code_produit && Number(l.quantite) > 0)
+        && Number(this.montantVerse) > 0
     },
   },
   methods: {
