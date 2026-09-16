@@ -3,7 +3,9 @@
     <div id="wrapper">
 
         <!-- Sidebar -->
-        <Sidebar />
+        <Sidebar :mobile-open="mobileOpen" @close="closeMobile" />
+        <!-- Fond assombri derrière le menu sur mobile, ferme le menu au clic -->
+        <div class="obf-sidebar-backdrop" v-if="mobileOpen" @click="closeMobile"></div>
         <!-- End of Sidebar -->
 
         <!-- Content Wrapper -->
@@ -13,7 +15,7 @@
             <div id="content">
 
                 <!-- Topbar -->
-                <Header />
+                <Header @toggle-menu="toggleMobile" />
 
                 <!-- Begin Page Content -->
                 <div class="container-fluid">
@@ -49,7 +51,14 @@ export default {
         Sidebar,
         Header,
         Footer
-    }
+    },
+    data() {
+        return { mobileOpen: false }
+    },
+    methods: {
+        toggleMobile() { this.mobileOpen = !this.mobileOpen },
+        closeMobile() { this.mobileOpen = false },
+    },
 }
 </script>
 

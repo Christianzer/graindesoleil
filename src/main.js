@@ -19,6 +19,16 @@ Vue.component('search-select', SearchSelect)
 // Thème OBF v2.0 — chargé en dernier pour primer sur Bootstrap / SB Admin 2
 import '@/assets/theme/obf-v2.css'
 
+// PWA : installabilité mobile (voir vue.config.js `pwa` + registerServiceWorker.js)
+import './registerServiceWorker'
+
+// Notifications push : (ré)abonne l'appareil si une session est déjà ouverte
+// (PWA rouverte sans repasser par l'écran de connexion).
+import { activerNotifications } from '@/push'
+if (localStorage.getItem('LoggedUser')) {
+  activerNotifications().catch(() => {})
+}
+
 Vue.use(BootstrapVue)
 Vue.prototype.$http = axios
 
@@ -43,6 +53,9 @@ axios.interceptors.request.use(config => {
       const user = JSON.parse(raw)
       if (user && user.username) {
         config.headers['X-User'] = user.username
+      }
+      if (user && user.type_user) {
+        config.headers['X-User-Role'] = user.type_user
       }
     }
   } catch (e) {

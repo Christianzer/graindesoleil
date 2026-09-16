@@ -7,16 +7,28 @@
   ],
   "permissions": [
     "core:default",
-    "shell:allow-open",
     "updater:default",
     "process:allow-restart",
     {
       "identifier": "fs:allow-mkdir",
-      "allow": [{ "path": "$APPCACHE/**" }]
+      "allow": [
+        { "path": "$DOWNLOAD/impressions" },
+        { "path": "$DOWNLOAD/impressions/**" }
+      ]
     },
     {
       "identifier": "fs:allow-write-file",
-      "allow": [{ "path": "$APPCACHE/**" }]
+      "allow": [
+        { "path": "$DOWNLOAD/impressions" },
+        { "path": "$DOWNLOAD/impressions/**" }
+      ]
+    },
+    {
+      "identifier": "opener:allow-open-path",
+      "allow": [
+        { "path": "$DOWNLOAD/impressions" },
+        { "path": "$DOWNLOAD/impressions/**" }
+      ]
     }
   ]
 }

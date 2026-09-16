@@ -2,13 +2,16 @@
 // eslint-disable-next-line vue/valid-template-root
 <template>
   <!-- Sidebar -->
-  <ul class="navbar-nav sidebar obf-sidebar accordion" id="accordionSidebar">
+  <ul class="navbar-nav sidebar obf-sidebar accordion" :class="{ 'obf-sidebar--open': mobileOpen }" id="accordionSidebar">
     <!-- Sidebar - Brand -->
     <router-link class="sidebar-brand d-flex align-items-center justify-content-center" :to="{name : 'dashboard'}">
       <div class="sidebar-brand-icon text-center">
-        <img src="@/assets/logo_obf.png" alt="Grains Moulus" width="30%">
+        <img src="@/assets/logo_fortuna.jpg" alt="Café Fortuna" width="30%">
       </div>
     </router-link>
+    <button class="obf-sidebar-close" type="button" aria-label="Fermer le menu" @click.stop.prevent="$emit('close')">
+      <i class="fas fa-times"></i>
+    </button>
 
     <!-- Zone de navigation défilante -->
     <div class="obf-sidebar__scroll">
@@ -255,6 +258,9 @@
 
 <script>
 export default {
+  props: {
+    mobileOpen: { type: Boolean, default: false },
+  },
   data() {
     return {
       currentUser: null
@@ -262,6 +268,13 @@ export default {
   },
   mounted() {
     this.loadCurrentUser();
+  },
+  watch: {
+    // Referme le menu mobile après un clic sur un lien (le sous-menu du logo
+    // peut aussi naviguer vers 'dashboard').
+    '$route'() {
+      if (this.mobileOpen) this.$emit('close')
+    },
   },
   computed: {
     // Usine (type_user 4) et Caisse (type_user 5) : périmètre restreint, on éclate

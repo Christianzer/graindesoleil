@@ -11,9 +11,9 @@
 // (même http://127.0.0.1) tant que Windows ne signale pas de connexion
 // réseau active (ERR_INTERNET_DISCONNECTED côté Chromium/Edge) — alors que le
 // PDF est généré 100% localement. On récupère donc le PDF nous-mêmes (requête
-// axios interne à l'app, indépendante du navigateur système), on l'écrit sur
-// disque, et on ouvre ce fichier local : le visualiseur PDF par défaut n'a
-// besoin d'aucune connexion pour un chemin file://.
+// axios interne à l'app, indépendante du navigateur système), on l'écrit dans
+// le dossier Téléchargements de l'utilisateur (téléchargement automatique,
+// visible même si l'ouverture du visualiseur échoue), puis on l'ouvre.
 // Nouveau système : documents rendus par pdfmake côté app bureau.
 //   import { imprimerDocument } from '@/utils/print'
 //   imprimerDocument('bl', code)
@@ -29,7 +29,7 @@ export async function ouvrirDocument(url) {
   try {
     const axios = (await import('axios')).default
     const { mkdir, writeFile, BaseDirectory } = await import('@tauri-apps/plugin-fs')
-    const { open } = await import('@tauri-apps/plugin-shell')
+    const { openPath } = await import('@tauri-apps/plugin-opener')
 
     const response = await axios.get(url, { responseType: 'arraybuffer' })
 
@@ -38,14 +38,14 @@ export async function ouvrirDocument(url) {
     const candidate = match ? match[1].replace(/[\\/\x00]/g, '').replace(/^\.+/, '') : ''
     const filename = /^[\w.-]+\.pdf$/i.test(candidate) ? candidate : `document-${Date.now()}.pdf`
 
-    await mkdir('impressions', { baseDir: BaseDirectory.AppCache, recursive: true })
+    await mkdir('impressions', { baseDir: BaseDirectory.Download, recursive: true })
     await writeFile(`impressions/${filename}`, new Uint8Array(response.data), {
-      baseDir: BaseDirectory.AppCache
+      baseDir: BaseDirectory.Download
     })
 
-    const { appCacheDir, join } = await import('@tauri-apps/api/path')
-    const fullPath = await join(await appCacheDir(), 'impressions', filename)
-    await open(fullPath)
+    const { downloadDir, join } = await import('@tauri-apps/api/path')
+    const fullPath = await join(await downloadDir(), 'impressions', filename)
+    await openPath(fullPath)
   } catch (e) {
     console.log(e)
     // Hors contexte Tauri (dev navigateur) ou erreur fs : repli navigateur classique.

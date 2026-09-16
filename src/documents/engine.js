@@ -1,5 +1,6 @@
 // Moteur PDF : compose un docDefinition pdfmake standardisé et le rend
-// (écriture dans le cache Tauri + ouverture ; repli navigateur en dev).
+// (téléchargement automatique dans le dossier Téléchargements + ouverture ;
+// repli navigateur en dev).
 import pdfMake from 'pdfmake/build/pdfmake'
 import pdfFonts from 'pdfmake/build/vfs_fonts'
 import { pageMargins, defaultStyle, styles, entete, bandeau, piedDePage } from './theme'
@@ -39,20 +40,20 @@ export function rendre (docDefinition, filename) {
       }
       try {
         const { mkdir, writeFile, BaseDirectory } = await import('@tauri-apps/plugin-fs')
-        const { open } = await import('@tauri-apps/plugin-shell')
-        const { appCacheDir, join } = await import('@tauri-apps/api/path')
+        const { openPath } = await import('@tauri-apps/plugin-opener')
+        const { downloadDir, join } = await import('@tauri-apps/api/path')
 
         const safe = /^[\w.-]+\.pdf$/i.test(filename) ? filename : `document-${Date.now()}.pdf`
         const buf = new Uint8Array(await blob.arrayBuffer())
 
-        await mkdir('impressions', { baseDir: BaseDirectory.AppCache, recursive: true })
-        await writeFile(`impressions/${safe}`, buf, { baseDir: BaseDirectory.AppCache })
+        await mkdir('impressions', { baseDir: BaseDirectory.Download, recursive: true })
+        await writeFile(`impressions/${safe}`, buf, { baseDir: BaseDirectory.Download })
 
-        const full = await join(await appCacheDir(), 'impressions', safe)
-        await open(full)
+        const full = await join(await downloadDir(), 'impressions', safe)
+        await openPath(full)
       } catch (e) {
         // Hors Tauri (dev navigateur) : ouvrir dans un onglet.
-        console.log('[pdf] repli navigateur :', e && e.message)
+        console.log('[pdf] repli navigateur :', e)
         try {
           const url = URL.createObjectURL(blob)
           window.open(url, '_blank')

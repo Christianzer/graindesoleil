@@ -3,7 +3,7 @@
         <div class="container my-auto">
             <div class="copyright my-auto">
                         <span>
-                            Grains Moulus
+                            Café Fortuna
                         </span>
             </div>
         </div>

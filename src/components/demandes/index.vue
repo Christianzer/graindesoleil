@@ -35,6 +35,49 @@
     </div>
 
     <div class="card shadow mb-4">
+      <div class="card-header py-3">Récapitulatif</div>
+      <div class="card-body">
+        <b-row class="align-items-end mb-3">
+          <b-col md="3"><label class="small mb-1">Du</label>
+            <b-form-datepicker size="sm" locale="fr-FR" v-model="recapDebut" @input="fetchRecap"></b-form-datepicker></b-col>
+          <b-col md="3"><label class="small mb-1">Au</label>
+            <b-form-datepicker size="sm" locale="fr-FR" v-model="recapFin" @input="fetchRecap"></b-form-datepicker></b-col>
+        </b-row>
+
+        <div class="row text-center mb-3" v-if="recap">
+          <div class="col-md-4">
+            <div class="p-3 border rounded">
+              <div class="text-muted small">Total demandé</div>
+              <div class="h5 mb-0">{{ nf(recap.total_demande) }} kg</div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="p-3 border rounded">
+              <div class="text-muted small">Total livré</div>
+              <div class="h5 mb-0">{{ nf(recap.total_livre) }} kg</div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="p-3 border rounded bg-light">
+              <div class="text-muted small">Taux de service global</div>
+              <div class="h5 mb-0 font-weight-bold">{{ tauxServiceGlobal }}%</div>
+            </div>
+          </div>
+        </div>
+
+        <b-table
+            v-if="recap"
+            bordered hover small
+            :items="recap.par_produit" :fields="recapFields"
+            show-empty empty-text="Aucune demande sur la période.">
+          <template v-slot:cell(taux_service)="row">
+            <span class="font-weight-bold" :class="row.item.taux_service < 80 ? 'text-danger' : 'text-success'">{{ row.item.taux_service }}%</span>
+          </template>
+        </b-table>
+      </div>
+    </div>
+
+    <div class="card shadow mb-4">
       <div class="card-header py-3">Liste des demandes</div>
       <div class="card-body">
         <div class="d-flex flex-wrap align-items-center mb-2" style="gap:.5rem">
@@ -79,6 +122,7 @@
         <b-form-datepicker locale="fr-FR" v-model="dateDemande"></b-form-datepicker>
       </b-form-group>
 
+      <div class="table-responsive">
       <table class="table table-bordered">
         <tr>
           <th>Produit</th>
@@ -88,7 +132,7 @@
         </tr>
         <tr v-for="(ligne, index) in lignesCreation" :key="index">
           <td style="min-width:220px;">
-            <search-select v-model="ligne.code_produit" :options="produitOptions"></search-select>
+            <search-select v-model="ligne.code_produit" :options="produitOptionsPour(index)"></search-select>
           </td>
           <td class="align-middle">
             <span v-if="ligne.code_produit">{{ nf(emballeDispo(ligne.code_produit)) }}</span>
@@ -104,6 +148,7 @@
           </td>
         </tr>
       </table>
+      </div>
 
       <b-button variant="outline-primary" class="mb-3" @click="lignesCreation.push({ code_produit: null, quantite_demandee: 1 })">
         <i class="fas fa-plus mr-1"></i> Ajouter une ligne
@@ -113,6 +158,7 @@
     </b-modal>
 
     <b-modal ref="modalLivraison" hide-footer :title="'Livraison — ' + (demandeSelectionnee ? demandeSelectionnee.code_demande : '')" size="lg">
+      <div class="table-responsive">
       <table class="table table-bordered">
         <tr>
           <th>Produit</th>
@@ -136,6 +182,7 @@
           </td>
         </tr>
       </table>
+      </div>
 
       <b-button variant="success" block :disabled="Loading" @click="confirmerLivraison">Confirmer la livraison</b-button>
     </b-modal>
@@ -145,6 +192,7 @@
         Statut : <strong>{{ statutLabel(demandeConsultee.statut) }}</strong>
         &nbsp;·&nbsp; Date : {{ demandeConsultee.date_demande | dateFr }}
       </p>
+      <div class="table-responsive">
       <table class="table table-bordered">
         <tr>
           <th>Produit</th>
@@ -160,6 +208,7 @@
           <td colspan="3" class="text-muted text-center">Aucune ligne.</td>
         </tr>
       </table>
+      </div>
     </b-modal>
   </div>
 </template>
@@ -218,9 +267,22 @@ export default {
         { key: 'reste_a_livrer', label: 'Reste à livrer', class: 'text-right' },
         { key: 'etat', label: 'État' },
       ],
+      recapDebut: moment().startOf('month').format('YYYY-MM-DD'),
+      recapFin: moment().format('YYYY-MM-DD'),
+      recap: null,
+      recapFields: [
+        { key: 'libelle_produit', label: 'Produit' },
+        { key: 'demande', label: 'Demandé (kg)' },
+        { key: 'livre', label: 'Livré (kg)' },
+        { key: 'taux_service', label: 'Taux de service' },
+      ],
     }
   },
   computed: {
+    tauxServiceGlobal() {
+      if (!this.recap || !this.recap.total_demande) return 0
+      return Math.round((this.recap.total_livre / this.recap.total_demande) * 10000) / 100
+    },
     demandesFiltrees() {
       const q = (this.filtre || '').toLowerCase().trim()
       return this.demandes.filter(d => {
@@ -242,6 +304,12 @@ export default {
   methods: {
     nf(v) {
       return new Intl.NumberFormat('fr-FR').format(Number(v) || 0)
+    },
+    produitOptionsPour(index) {
+      const dejaChoisis = this.lignesCreation
+        .filter((l, i) => i !== index && l.code_produit)
+        .map(l => l.code_produit)
+      return this.produitOptions.filter(o => !dejaChoisis.includes(o.value))
     },
     emballeDispo(code) {
       const r = this.apercuStock.find(x => x.code_produit === code)
@@ -331,6 +399,11 @@ export default {
         this.produits = response.data.element
       }).catch((err) => console.log(err))
     },
+    async fetchRecap() {
+      await axios.get(`${API_BASE_URL}/api/demandes/recap`, { params: { debut: this.recapDebut, fin: this.recapFin } }).then(response => {
+        this.recap = response.data
+      }).catch((err) => console.log(err))
+    },
   },
   watch: {
     filtre() { this.currentPage = 1 },
@@ -340,6 +413,7 @@ export default {
     this.fetchDemandes()
     this.fetchProduits()
     this.fetchApercuStock()
+    this.fetchRecap()
   },
 }
 </script>

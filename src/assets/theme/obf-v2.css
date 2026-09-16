@@ -41,7 +41,11 @@ body, #page-top {
   border: 1px solid var(--obf-border) !important;
   border-radius: var(--obf-radius) !important;
   box-shadow: var(--obf-shadow) !important;
-  overflow: hidden;
+  /* PAS de overflow:hidden ici : ça coupe tout popup qui doit déborder de la
+     carte (calendrier de b-form-datepicker, menus déroulants...). Bootstrap
+     applique déjà le border-radius aux coins du card-header/card-footer via
+     .card > :first-child / :last-child, donc rien ne déborde des coins
+     arrondis sans cette règle. */
 }
 .card .card-header {
   background: transparent !important;
@@ -363,4 +367,77 @@ body, #page-top {
   border: 1px solid #dfe1fb;
   border-radius: var(--obf-radius-pill);
   padding: .45rem .6rem;
+}
+
+/* ============================================================
+   MOBILE — menu escamotable (sous 767.98px)
+   Le menu reste inchangé (16.5rem, toujours visible) au-dessus de ce seuil ;
+   en dessous, il devient un tiroir hors-écran ouvert par le bouton hamburger
+   du topbar (voir header.vue / Menu.vue).
+   ============================================================ */
+.obf-mobile-toggle {
+  display: none;
+}
+.obf-sidebar-close {
+  display: none;
+}
+.obf-sidebar-backdrop {
+  display: none;
+}
+
+@media (max-width: 767.98px) {
+  .obf-mobile-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: var(--obf-radius-sm);
+    border: 1px solid var(--obf-border);
+    background: var(--obf-surface);
+    color: var(--obf-text);
+    margin-right: 12px;
+    flex: 0 0 auto;
+  }
+  .obf-mobile-toggle:hover { background: var(--obf-primary-50); color: var(--obf-primary); }
+
+  .sidebar.obf-sidebar {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    transform: translateX(-100%);
+    transition: transform .25s ease;
+    z-index: 1045;
+    box-shadow: var(--obf-shadow-md);
+  }
+  .sidebar.obf-sidebar.obf-sidebar--open {
+    transform: translateX(0);
+  }
+
+  .obf-sidebar-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    background: var(--obf-primary-50);
+    color: var(--obf-primary);
+  }
+
+  .obf-sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 16, 12, .4);
+    z-index: 1040;
+  }
+
+  /* Le contenu prend toute la largeur : plus de colonne sidebar figée à côté. */
+  #content-wrapper { width: 100%; }
 }

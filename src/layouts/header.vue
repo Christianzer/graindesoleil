@@ -1,6 +1,9 @@
 <template>
   <nav class="navbar navbar-expand navbar-light topbar mb-4 static-top">
-    <div class="obf-topbar-title">Grains Moulus — Stock &amp; Caisse</div>
+    <button class="obf-mobile-toggle" type="button" aria-label="Ouvrir le menu" @click="$emit('toggle-menu')">
+      <i class="fas fa-bars"></i>
+    </button>
+    <div class="obf-topbar-title">Café Fortuna — Stock &amp; Caisse</div>
     <ul class="navbar-nav ml-auto">
       <li class="nav-item">
         <div class="obf-user-chip" v-if="user" role="button" title="Changer mon mot de passe" @click="$refs.changerMdp.showModal()">

@@ -38,6 +38,11 @@
               :current-page="currentPage"
               :per-page="perPage"
           >
+            <template v-slot:cell(statut)="row">
+              <b-badge v-if="row.item.statut === 1" variant="warning">En attente</b-badge>
+              <b-badge v-else-if="row.item.statut === 3" variant="danger">Rejeté</b-badge>
+              <b-badge v-else variant="success">Validé</b-badge>
+            </template>
             <template v-slot:cell(actions)="row">
               <b-button
                   size="sm"
@@ -47,6 +52,10 @@
               >
                 modifier
               </b-button>
+              <template v-if="row.item.statut === 1 && peutValiderDecaissement">
+                <b-button size="sm" variant="success" class="mr-1" @click="validerDecaissement(row.item)">Valider</b-button>
+                <b-button size="sm" variant="danger" @click="rejeterDecaissement(row.item)">Rejeter</b-button>
+              </template>
             </template>
             <template v-slot:cell(justif)="row">
               <span type="button" class="text-info" @click="openModalJustif(row.item.code_sortie)" v-if="row.item.justif"><i class="fas fa-fw fa-folder"></i></span>
@@ -114,6 +123,7 @@ const axios = require('axios')
 import API_BASE_URL from "@/api/config.js";
 import Facture from "@/components/sortie/facture";
 import PageHeader from "@/components/ui/PageHeader.vue";
+import { hasPermission } from "@/utils/permissions";
 export default {
   name: "index",
   data(){
@@ -156,6 +166,10 @@ export default {
           class: 'text-right',
           sortable: true
         },
+        { key: 'statut',
+          label: 'Statut',
+          sortable: true
+        },
         { key: 'actions',
           sortable: true
         },
@@ -167,6 +181,11 @@ export default {
   components: {
    Facture,
    PageHeader
+  },
+  computed: {
+    peutValiderDecaissement() {
+      return hasPermission('valider_decaissement')
+    },
   },
   created() {
     this.fetchclients()
@@ -241,6 +260,25 @@ export default {
     openModalFacture() {
       this.$refs.modalFacture.editMode = false
       this.$refs.modalFacture.showModalFacture()
+    },
+    async validerDecaissement(item) {
+      await axios.put(`${API_BASE_URL}/api/sortie_caisse/${item.code_sortie}/valider`).then(() => {
+        this.$bvToast.toast(`Décaissement ${item.code_sortie} validé.`, { title: 'Validation', variant: 'success', solid: true })
+        this.fetchclients()
+      }).catch((err) => {
+        const msg = (err.response && err.response.data && err.response.data.message) || 'Erreur lors de la validation.'
+        this.$bvToast.toast(msg, { title: 'Validation', variant: 'danger', solid: true })
+      })
+    },
+    async rejeterDecaissement(item) {
+      const motif = window.prompt('Motif du rejet (optionnel) :') || ''
+      await axios.put(`${API_BASE_URL}/api/sortie_caisse/${item.code_sortie}/rejeter`, { motif }).then(() => {
+        this.$bvToast.toast(`Décaissement ${item.code_sortie} rejeté.`, { title: 'Rejet', variant: 'success', solid: true })
+        this.fetchclients()
+      }).catch((err) => {
+        const msg = (err.response && err.response.data && err.response.data.message) || 'Erreur lors du rejet.'
+        this.$bvToast.toast(msg, { title: 'Rejet', variant: 'danger', solid: true })
+      })
     },
 
 

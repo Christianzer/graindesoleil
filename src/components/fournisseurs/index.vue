@@ -67,6 +67,7 @@
       <b-table
           bordered
           hover
+          responsive
           :items="approvisionnements"
           :fields="fieldsAppro"
       >

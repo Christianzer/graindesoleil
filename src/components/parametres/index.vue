@@ -61,6 +61,14 @@
             </div>
           </div>
 
+          <div class="row">
+            <div class="col-md-4">
+              <b-form-group label="Seuil de solde cumulé commercial (FCFA)" description="Au-delà de ce solde dû, une nouvelle cession à un commercial doit être validée par le responsable.">
+                <b-form-input type="number" min="0" v-model.number="formData.seuil_solde_commercial"></b-form-input>
+              </b-form-group>
+            </div>
+          </div>
+
           <b-button variant="primary" :disabled="isSubmitting" @click="save">Enregistrer</b-button>
         </template>
       </div>
@@ -83,6 +91,7 @@ export default {
       formData: {
         nom: '', adresse: '', telephone: '', email: '',
         rccm: '', ncc: '', regime_fiscal: '', capital: '',
+        seuil_solde_commercial: 2000000,
       }
     }
   },

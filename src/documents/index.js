@@ -6,6 +6,7 @@
 //
 import API_BASE_URL from '@/api/config'
 import { genererDocument } from './engine'
+import { chargerEntreprise } from './identite'
 import * as B from './builders'
 const axios = require('axios')
 
@@ -33,6 +34,7 @@ export async function imprimerDocument (type, ...args) {
     return
   }
   try {
+    await chargerEntreprise()
     const { data } = await axios.get(`${API_BASE_URL}${entry.url(...args)}`)
     await genererDocument(entry.build(data))
   } catch (e) {

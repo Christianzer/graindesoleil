@@ -69,21 +69,24 @@
 
           <b-table
               v-if="lignes.length"
-              bordered hover responsive small
+              bordered hover responsive small class="align-middle"
               :items="lignes" :fields="champsLignes">
             <template v-slot:cell(prix)="row">{{ nf(row.item.prix) }} FCFA</template>
             <template v-slot:cell(quantite)="row">
-              <b-form-input
-                  type="number" min="1" :max="row.item.dispo" size="sm" style="max-width:110px"
-                  v-model.number="row.item.quantite"
-                  :state="row.item.quantite > 0 && row.item.quantite <= row.item.dispo ? null : false"></b-form-input>
+              <b-input-group append="kg" size="sm" style="max-width:140px">
+                <b-form-input
+                    type="number" min="1" :max="row.item.dispo"
+                    v-model.number="row.item.quantite"
+                    :state="row.item.quantite > 0 && row.item.quantite <= row.item.dispo ? null : false"></b-form-input>
+              </b-input-group>
+              <small v-if="row.item.quantite > row.item.dispo" class="text-danger">Stock insuffisant</small>
             </template>
             <template v-slot:cell(dispo)="row">
-              <span :class="{ 'text-danger': row.item.quantite > row.item.dispo }">{{ nf(row.item.dispo) }}</span>
+              <span :class="{ 'text-danger font-weight-bold': row.item.quantite > row.item.dispo }">{{ nf(row.item.dispo) }} kg</span>
             </template>
             <template v-slot:cell(sous_total)="row">{{ nf(row.item.prix * (row.item.quantite || 0)) }} FCFA</template>
             <template v-slot:cell(actions)="row">
-              <b-button size="sm" variant="outline-danger" @click="lignes.splice(row.index, 1)">
+              <b-button size="sm" variant="outline-danger" @click="lignes.splice(row.index, 1)" title="Retirer cette ligne">
                 <i class="fas fa-trash"></i>
               </b-button>
             </template>
@@ -153,8 +156,8 @@ export default {
     produitOptions() {
       const pris = this.lignes.map(l => l.code_produit)
       return this.produits
-        .filter(p => !pris.includes(p.code_produit))
-        .map(p => ({ value: p.code_produit, text: p.libelle_produit }))
+        .filter(p => !p.est_matiere_premiere && !pris.includes(p.code_produit))
+        .map(p => ({ value: p.code_produit, text: `${p.libelle_produit} — ${this.nf(p.quantite_produit)} kg dispo` }))
     },
     total() {
       return this.lignes.reduce((t, l) => t + l.prix * (Number(l.quantite) || 0), 0)

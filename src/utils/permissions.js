@@ -10,6 +10,8 @@ const ADMIN_PERMISSIONS = [
   'historiques_encaissement', 'historiques_encaissement_clients', 'commercial', 'commerciaux',
   'journal_activite', 'parametres',
   'demandes', 'demandes_creer', 'commercial_prises', 'commercial_prises_creer',
+  'valider_depassement_seuil', 'valider_decaissement', 'supprimer_documents',
+  'encaissement_bl_clients', 'compte_client', 'compte_commercial',
 ]
 
 // Responsable : périmètre de l'admin, sans la section « Suivi & Documents » du
@@ -17,26 +19,32 @@ const ADMIN_PERMISSIONS = [
 const MASQUE_RESPONSABLE = ['documents_clients', 'historiques', 'historiques_encaissement', 'journal_activite']
 const RESPONSABLE_PERMISSIONS = ADMIN_PERMISSIONS.filter(p => !MASQUE_RESPONSABLE.includes(p))
 
-// L'usine ne vend rien : pas de fournisseurs/appro pour le responsable (c'est elle
-// qui lui donne les produits, cf. spec) — fournisseurs/approvisionnement passent ici.
+// Fournisseurs/approvisionnement : l'usine saisit son stock de matière
+// première via ses propres réceptions fournisseurs (achat de café grain) et
+// règle leurs factures — remis dans son périmètre.
 const USINE_PERMISSIONS = [
-  'dashboard', 'fournisseurs', 'approvisionnement', 'transformations',
+  'dashboard', 'transformations',
   'demandes', 'demandes_livrer',
+  'fournisseurs', 'approvisionnement',
 ]
 
 // Aucun écran dédié pour le commercial dans ce plan (voir ruling en tête de plan) :
 // les cessions/versements/solde sont gérés par le responsable.
 const COMMERCIAL_PERMISSIONS = ['dashboard']
 
-// Opérateur de caisse : console de trésorerie uniquement — encaissement (BL
-// clients + commerciaux), autres entrées de caisse, décaissement, rapport de
-// caisse, plus son tableau de bord dédié. Aucun accès aux ventes, clients,
-// produits, fournisseurs, comptes, paramètres, ni à la section
-// « Suivi & Documents » (archive, historiques, journal d'activité) — retirée
-// du périmètre caisse sur demande.
+// Opérateur de caisse : périmètre restreint aux commerciaux uniquement (plus
+// de BL clients, cf. encaissement_bl_clients réservé à Admin/Responsable) —
+// dépôts-ventes (cessions, sous contrôle du seuil de solde côté serveur),
+// versements/encaissement des commerciaux, vue du stock disponible (onglet
+// dédié dans l'écran caisse), décaissement (soumis à validation du
+// responsable), rapport de caisse, tableau de bord dédié. Plus d'« Autres
+// entrées » (appro) retiré sur demande.
+// Aucun accès aux ventes, clients, produits, fournisseurs, paramètres, ni à
+// la section « Suivi & Documents » (archive, historiques, journal d'activité).
 const CAISSE_PERMISSIONS = [
   'dashboard',
-  'caisses', 'appro', 'decaissement', 'rapport_caisse',
+  'caisses', 'decaissement', 'rapport_caisse',
+  'commercial_prises', 'commercial_prises_creer',
 ]
 
 const PERMISSIONS_BY_ROLE = {

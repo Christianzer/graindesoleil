@@ -49,6 +49,16 @@
               </b-button>
 
               <b-button
+                  v-if="peutVoirCompte"
+                  size="sm"
+                  variant="outline-info"
+                  class="mr-1"
+                  @click="$router.push({ name: 'compte_client', params: { id: row.item.id } })"
+              >
+                compte
+              </b-button>
+
+              <b-button
                   size="sm"
                   variant="outline-danger"
                   class="mr-1"
@@ -79,6 +89,7 @@ const axios = require('axios')
 import Form from "./form";
 import PageHeader from "@/components/ui/PageHeader.vue";
 import flow from "@/store/flow";
+import { hasPermission } from "@/utils/permissions";
 export default {
   name: "index",
   data(){
@@ -139,6 +150,11 @@ export default {
       this.fetchclients();
     })
 
+  },
+  computed: {
+    peutVoirCompte() {
+      return hasPermission('compte_client')
+    },
   },
   methods: {
     onFiltered(filteredItems) {

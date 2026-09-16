@@ -5,6 +5,9 @@
         <b-button variant="outline-primary" @click="fetchTout">
           <i class="fas fa-sync-alt mr-1"></i> Rafraîchir
         </b-button>
+        <b-button variant="primary" @click="imprimerDashboard">
+          <i class="fas fa-print mr-1"></i> Imprimer
+        </b-button>
       </template>
     </PageHeader>
 
@@ -39,8 +42,8 @@
           <StatCard label="Encaissé" :value="fmt(kpis.encaisse)" icon="fas fa-check-circle" variant="accent" />
         </div>
         <div class="col-xl col-md-6 mb-4">
-          <StatCard label="Reste à encaisser" :value="fmt(resteAEncaisser)"
-                    :sub="'TTC : ' + fmt(resteAEncaisserTtc)" icon="fas fa-hourglass-half" variant="primary" />
+          <StatCard label="Reste à encaisser" :value="fmt(ventesARealiserTtc)"
+                    sub="Solde impayé de tous les BL (TTC)" icon="fas fa-hourglass-half" variant="primary" />
         </div>
         <div class="col-xl col-md-6 mb-4">
           <StatCard label="Décaissement" :value="fmt(kpis.decaissement)" icon="fas fa-arrow-down" variant="danger" />
@@ -61,7 +64,7 @@
               <i class="fas fa-chart-line mr-2"></i> Chiffre d'affaires encaissé par jour
             </div>
             <div class="card-body" style="height: 300px;">
-              <LineChart :chart-data="caChartData" :chart-options="lineOptions" />
+              <LineChart ref="caChart" :chart-data="caChartData" :chart-options="lineOptions" />
             </div>
           </div>
         </div>
@@ -71,30 +74,7 @@
               <i class="fas fa-balance-scale mr-2"></i> Trésorerie — encaissements vs décaissements
             </div>
             <div class="card-body" style="height: 300px;">
-              <BarChart :chart-data="tresorerieChartData" :chart-options="barOptions" />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="row">
-        <div class="col-lg-6">
-          <div class="card shadow mb-4">
-            <div class="card-header py-3 font-weight-bold text-primary">
-              <i class="fas fa-industry mr-2"></i> Production — quantité transformée par jour
-            </div>
-            <div class="card-body" style="height: 300px;">
-              <LineChart :chart-data="transformationsChartData" :chart-options="lineOptions" />
-            </div>
-          </div>
-        </div>
-        <div class="col-lg-6">
-          <div class="card shadow mb-4">
-            <div class="card-header py-3 font-weight-bold text-primary">
-              <i class="fas fa-warehouse mr-2"></i> Stock par étape de production
-            </div>
-            <div class="card-body" style="height: 300px;">
-              <BarChart :chart-data="stockChartData" :chart-options="barOptions" />
+              <BarChart ref="tresorerieChart" :chart-data="tresorerieChartData" :chart-options="barOptions" />
             </div>
           </div>
         </div>
@@ -107,7 +87,7 @@
               <i class="fas fa-trophy mr-2"></i> Top produits vendus
             </div>
             <div class="card-body" style="height: 280px;">
-              <BarChart :chart-data="topProduitsChartData" :chart-options="horizontalBarOptions" />
+              <BarChart ref="topProduitsChart" :chart-data="topProduitsChartData" :chart-options="horizontalBarOptions" />
             </div>
           </div>
         </div>
@@ -117,7 +97,7 @@
               <i class="fas fa-user-friends mr-2"></i> Top clients
             </div>
             <div class="card-body" style="height: 280px;">
-              <BarChart :chart-data="topClientsChartData" :chart-options="horizontalBarOptions" />
+              <BarChart ref="topClientsChart" :chart-data="topClientsChartData" :chart-options="horizontalBarOptions" />
             </div>
           </div>
         </div>
@@ -127,7 +107,7 @@
               <i class="fas fa-people-carry mr-2"></i> Soldes commerciaux
             </div>
             <div class="card-body" style="height: 280px;">
-              <BarChart :chart-data="soldesChartData" :chart-options="horizontalBarOptions" />
+              <BarChart ref="soldesChart" :chart-data="soldesChartData" :chart-options="horizontalBarOptions" />
             </div>
           </div>
         </div>
@@ -195,6 +175,8 @@ import API_BASE_URL from '@/api/config.js'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import StatCard from '@/components/ui/StatCard.vue'
 import moment from 'moment'
+import { genererDocument } from '@/documents'
+import { dashboardResponsable } from '@/documents/builders'
 const axios = require('axios')
 
 import { Line, Bar } from 'vue-chartjs'
@@ -227,8 +209,6 @@ export default {
       kpis: { encaisse: 0, decaissement: 0, autres_entrees: 0, reste_a_verser_commerciaux: 0 },
       caParJour: [],
       tresorerieParJour: [],
-      transformationsParJour: [],
-      stockParEtape: [],
       topProduits: [],
       topClients: [],
       soldesCommerciaux: [],
@@ -237,6 +217,7 @@ export default {
       ventesARealiser: 0,
       ventesRealiserTtc: 0,
       ventesARealiserTtc: 0,
+      appro: 0,
       // Réconciliation de stock (/api/reconciliation_stock)
       reconLoading: false,
       reconDates: [],
@@ -249,12 +230,6 @@ export default {
     }
   },
   computed: {
-    resteAEncaisser() {
-      return this.ventesARealiser - this.ventesRealiser
-    },
-    resteAEncaisserTtc() {
-      return this.ventesARealiserTtc - this.ventesRealiserTtc
-    },
     caChartData() {
       return {
         labels: this.caParJour.map(l => this.formatJour(l.date)),
@@ -267,23 +242,6 @@ export default {
         datasets: [
           { label: 'Encaissé', backgroundColor: COULEUR_ENCAISSE, data: this.tresorerieParJour.map(l => l.encaisse) },
           { label: 'Décaissé', backgroundColor: COULEUR_DECAISSE, data: this.tresorerieParJour.map(l => l.decaisse) },
-        ],
-      }
-    },
-    transformationsChartData() {
-      return {
-        labels: this.transformationsParJour.map(l => this.formatJour(l.date)),
-        datasets: [{ label: 'Quantité transformée', backgroundColor: COULEURS_ETAPES[2], borderColor: COULEURS_ETAPES[2], data: this.transformationsParJour.map(l => l.quantite), tension: 0.3 }],
-      }
-    },
-    stockChartData() {
-      return {
-        labels: this.stockParEtape.map(p => p.libelle_produit),
-        datasets: [
-          { label: 'Matière première', backgroundColor: COULEURS_ETAPES[0], data: this.stockParEtape.map(p => p.quantite_matiere_premiere) },
-          { label: 'Torréfié', backgroundColor: COULEURS_ETAPES[1], data: this.stockParEtape.map(p => p.quantite_torrefie) },
-          { label: 'Broyé', backgroundColor: COULEURS_ETAPES[2], data: this.stockParEtape.map(p => p.quantite_broye) },
-          { label: 'Emballé', backgroundColor: COULEURS_ETAPES[3], data: this.stockParEtape.map(p => p.quantite_emballe) },
         ],
       }
     },
@@ -367,8 +325,6 @@ export default {
         this.kpis = d.kpis
         this.caParJour = d.ca_par_jour
         this.tresorerieParJour = d.tresorerie_par_jour
-        this.transformationsParJour = d.transformations_par_jour
-        this.stockParEtape = d.stock_par_etape
         this.topProduits = d.top_produits
         this.topClients = d.top_clients
         this.soldesCommerciaux = d.soldes_commerciaux
@@ -390,6 +346,7 @@ export default {
         this.ventesARealiser = Math.floor(d.ventes_a_realiser || 0)
         this.ventesRealiserTtc = Math.floor((d.ventes_realiser_ttc && d.ventes_realiser_ttc.montant_total) || 0)
         this.ventesARealiserTtc = Math.floor(d.ventes_a_realiser_ttc || 0)
+        this.appro = Math.floor(d.appro || 0)
       }).catch((err) => console.log(err))
     },
     async fetchRecon() {
@@ -410,6 +367,39 @@ export default {
       this.fetchRapport()
       this.fetchDash()
       this.fetchRecon()
+    },
+    // Capture un graphique Chart.js (via vue-chartjs) en PNG base64 pour
+    // l'intégrer au PDF — this.$refs.xxx.chart est l'instance Chart.js réelle
+    // exposée par vue-chartjs 4.
+    captureGraphique(ref) {
+      const comp = this.$refs[ref]
+      const chart = comp && comp.chart
+      if (!chart || typeof chart.toBase64Image !== 'function') return null
+      try {
+        return chart.toBase64Image()
+      } catch (e) {
+        console.log('[dashboard] capture graphique échouée :', ref, e)
+        return null
+      }
+    },
+    imprimerDashboard() {
+      const graphiques = [
+        { titre: "Chiffre d'affaires encaissé par jour", image: this.captureGraphique('caChart') },
+        { titre: 'Trésorerie — encaissements vs décaissements', image: this.captureGraphique('tresorerieChart') },
+        { titre: 'Top produits vendus', image: this.captureGraphique('topProduitsChart') },
+        { titre: 'Top clients', image: this.captureGraphique('topClientsChart') },
+        { titre: 'Soldes commerciaux', image: this.captureGraphique('soldesChart') },
+      ].filter(g => g.image)
+
+      genererDocument(dashboardResponsable({
+        date: moment().format('YYYY-MM-DD'),
+        encaisse_ttc: this.kpis.encaisse,
+        reste_ttc: this.ventesARealiserTtc,
+        appro_kg: this.appro,
+        decaissement: this.kpis.decaissement,
+        reconRows: this.reconRows,
+        graphiques,
+      }))
     },
   },
   created() {

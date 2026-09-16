@@ -3,10 +3,10 @@
     <!-- Panneau gauche : branding -->
     <div class="obf-login__brand">
       <div class="obf-login__brand-inner">
-        <img src="@/assets/logo_obf.png" alt="logo Grains Moulus" class="obf-login__logo">
-        <h1 class="obf-login__brand-title">Grains Moulus</h1>
+        <img src="@/assets/logo_fortuna.jpg" alt="logo Café Fortuna" class="obf-login__logo">
+        <h1 class="obf-login__brand-title">Café Fortuna</h1>
         <p class="obf-login__brand-text">Gestion de stock, bons de livraison et trésorerie.</p>
-        <span class="obf-login__version">Version 1.0</span>
+        <span class="obf-login__version">Version {{ appVersion }}</span>
       </div>
     </div>
 
@@ -36,6 +36,7 @@
 import axios from 'axios'
 import API_BASE_URL from '@/api/config'
 import { getPermissionsForRole } from '@/utils/permissions'
+import { activerNotifications } from '@/push'
 
 export default {
   data () {
@@ -46,6 +47,7 @@ export default {
       },
       error: null,
       submitting: false,
+      appVersion: process.env.PACKAGE_VERSION || '',
     }
   },
   methods: {
@@ -71,6 +73,7 @@ export default {
         }
         localStorage.setItem('LoggedUser', JSON.stringify(userInfo))
         this.logConnexion(this.form.username, true)
+        activerNotifications().catch(() => {})
         this.$router.push({ name: 'dashboard' })
       } catch (err) {
         this.error = 'Nom d\'utilisateur ou mot de passe incorrect'

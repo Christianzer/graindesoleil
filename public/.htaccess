@@ -1,0 +1,20 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # Fichiers et dossiers réels servis tels quels (assets, manifest, service worker…)
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # Toute autre route (Vue Router en mode history) retombe sur index.html
+  RewriteRule ^ index.html [L]
+</IfModule>
+
+# Le service worker ne doit jamais être mis en cache par le navigateur,
+# sinon les mises à jour de l'app ne se propagent plus.
+<IfModule mod_headers.c>
+  <FilesMatch "^service-worker\.js$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+</IfModule>

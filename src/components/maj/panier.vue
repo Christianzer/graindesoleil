@@ -15,7 +15,8 @@
         </template>
         <template v-else>
 
-          <table class="table tftable table-responsive" style="width: auto" align="center">
+          <div class="table-responsive">
+          <table class="table tftable" style="width: auto" align="center">
             <tr>
               <th>Libelle Produit</th>
               <th>Quantité disponible</th>
@@ -66,6 +67,7 @@
                -->
             </tr>
           </table>
+          </div>
 
           <div class="text-left">
             <b-form-group

@@ -71,6 +71,11 @@ const routes = [
         component : () => import('@/components/clients/index.vue')
       },
       {
+        path: '/clients/:id/compte',
+        name: 'compte_client',
+        component: () => import('@/components/clients/compte.vue')
+      },
+      {
         path: '/commercials',
         name: 'commercial',
         component : () => import('@/components/commercial/index.vue')
@@ -219,6 +224,11 @@ const routes = [
         path: '/commercial-prises',
         name: 'commercial_prises',
         component: () => import('@/components/commercial_prises/index.vue')
+      },
+      {
+        path: '/commerciaux/:id/compte',
+        name: 'compte_commercial',
+        component: () => import('@/components/commerciaux/compte.vue')
       },
       {
         name: 'parametres',

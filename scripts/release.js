@@ -64,8 +64,12 @@ function main() {
   // 2. Build signé (createUpdaterArtifacts: true génère le .nsis.zip + .sig)
   // Appel direct des binaires locaux : sur cette machine, le "yarn" résolu
   // par le shell cmd.exe passe par un shim corepack cassé pour ce projet.
+  // `tauri build` exécute déjà `beforeBuildCommand` (yarn build) lui-même —
+  // ne PAS le lancer ici en plus : builder `dist/` deux fois de suite ouvre
+  // une fenêtre de course (wipe + réécriture Windows) où `tauri build` peut
+  // se mettre à embarquer les ressources pendant que la 2e passe écrit encore
+  // dist/, produisant un binaire signé avec "asset not found: index.html".
   run('node', ['scripts/prepare-tauri-resources.js'])
-  run('node_modules/.bin/vue-cli-service', ['build'])
   run('node_modules/.bin/tauri', ['build'])
 
   // 3. Repérer les artefacts produits (noms exacts dépendants de la version/arch)
@@ -83,6 +87,15 @@ function main() {
   }
   const signature = fs.readFileSync(path.join(bundleDir, sigFile), 'utf8').trim()
 
+  // GitHub réécrit le nom d'asset au téléversement : espaces -> points, et les
+  // caractères accentués sont translittérés vers leur forme de base (é -> e).
+  // Reproduire exactement cette normalisation ici, sinon l'URL du manifeste
+  // updater ne correspond plus au fichier réellement stocké -> 404 silencieux
+  // pour tous les clients (vécu sur productName "Café Fortuna").
+  function nomAssetGithub(nom) {
+    return nom.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/ /g, '.')
+  }
+
   // 4. latest.json — manifeste lu par le plugin updater au lancement de l'app
   const latest = {
     version,
@@ -91,9 +104,7 @@ function main() {
     platforms: {
       'windows-x86_64': {
         signature,
-        // GitHub remplace les espaces du nom d'asset par des points au téléversement :
-        // l'URL du manifeste doit refléter le nom réellement stocké, pas l'encodage %20.
-        url: `https://github.com/${REPO}/releases/download/v${version}/${setupExe.replace(/ /g, '.')}`,
+        url: `https://github.com/${REPO}/releases/download/v${version}/${nomAssetGithub(setupExe)}`,
       },
     },
   }

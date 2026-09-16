@@ -2,7 +2,7 @@
   <div class="container-fluid p-3">
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
       <b-breadcrumb>
-        <b-breadcrumb-item>Grains Moulus</b-breadcrumb-item>
+        <b-breadcrumb-item>Café Fortuna</b-breadcrumb-item>
         <b-breadcrumb-item>Commercial</b-breadcrumb-item>
       </b-breadcrumb>
       <b-button variant="danger mr-1" @click="this.fetchclients">Raffraichir</b-button>

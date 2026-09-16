@@ -8,6 +8,7 @@ pub fn run() {
     tauri::Builder::default()
         .manage(backend::BackendProcess(Mutex::new(None)))
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_fs::init())

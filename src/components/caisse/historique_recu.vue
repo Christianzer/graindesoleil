@@ -55,6 +55,16 @@
                 Imprimer le réçu
               </b-button>
 
+              <b-button
+                  v-if="peutSupprimer"
+                  size="sm"
+                  class="mr-1 mt-1"
+                  variant="outline-danger"
+                  v-on:click="supprimer(row.item.code_versement)"
+              >
+                Supprimer
+              </b-button>
+
             </template>
 
             <template v-slot:cell(date_versement)="row">
@@ -86,8 +96,14 @@ import API_BASE_URL from "@/api/config.js";
 const axios = require('axios')
 import PageHeader from "@/components/ui/PageHeader.vue";
 import flow from "@/store/flow";
+import { hasPermission } from "@/utils/permissions";
 export default {
   name: "index",
+  computed: {
+    peutSupprimer() {
+      return hasPermission('supprimer_documents')
+    },
+  },
   data(){
     return {
       filter :"",
@@ -167,6 +183,16 @@ export default {
 
     reload(){
       this.listes()
+    },
+    async supprimer(code_versement) {
+      if (!window.confirm(`Supprimer le versement ${code_versement} ? La dette du client sera rétablie d'autant.`)) return
+      await axios.delete(`${API_BASE_URL}/api/versement/${code_versement}`).then(() => {
+        this.$bvToast.toast(`Versement ${code_versement} supprimé.`, { title: 'Suppression', variant: 'success', solid: true })
+        this.listes()
+      }).catch((err) => {
+        const msg = (err.response && err.response.data && err.response.data.message) || 'Erreur lors de la suppression.'
+        this.$bvToast.toast(msg, { title: 'Suppression', variant: 'danger', solid: true })
+      })
     },
 
   },

@@ -18,7 +18,7 @@
                   <tr>
                     <td class="title">
 
-                      <img src="@/assets/logo_obf.png" style="width:100%; max-width:150px;">
+                      <img src="@/assets/logo_fortuna.jpg" style="width:100%; max-width:150px;">
 
                     </td>
                     <td class="font-weight-bold text-uppercase text-primary">
@@ -37,7 +37,7 @@
                 <table>
                   <tr>
                     <td class="font-weight-bold text-primary text-uppercase">
-                      Grains Moulus
+                      Café Fortuna
                     </td>
                   </tr>
                 </table>

@@ -13,7 +13,7 @@
         <b-tabs content-class="pt-3">
 
           <!-- BL clients -->
-          <b-tab :title="'Bons de livraison (' + bl.length + ')'" active>
+          <b-tab v-if="peutBl" :title="'Bons de livraison (' + bl.length + ')'" :active="peutBl">
             <b-form-input type="search" v-model="filtreBl" placeholder="Rechercher (client, code)…" class="mb-2" style="max-width:320px"></b-form-input>
             <b-table
                 head-variant="light" bordered hover responsive small
@@ -27,7 +27,7 @@
                 <span class="font-weight-bold text-danger">{{ nf(row.item.reste) }} FCFA</span>
               </template>
               <template v-slot:cell(actions)="row">
-                <b-button size="sm" variant="success" @click="ouvrirVersement('bl', row.item)">Encaisser</b-button>
+                <b-button size="sm" variant="success" @click="ouvrirVersement(row.item)">Encaisser</b-button>
               </template>
             </b-table>
             <b-pagination
@@ -37,7 +37,7 @@
           </b-tab>
 
           <!-- Commerciaux -->
-          <b-tab :title="'Commerciaux (' + commerciaux.length + ')'">
+          <b-tab :title="'Commerciaux (' + commerciaux.length + ')'" :active="!peutBl">
             <b-form-input type="search" v-model="filtreCom" placeholder="Rechercher un commercial…" class="mb-2" style="max-width:320px"></b-form-input>
             <b-table
                 head-variant="light" bordered hover responsive small
@@ -55,7 +55,7 @@
                 <span class="font-weight-bold text-danger">{{ nf(row.item.reste_a_verser) }} FCFA</span>
               </template>
               <template v-slot:cell(actions)="row">
-                <b-button size="sm" variant="success" @click="ouvrirVersement('commercial', row.item)">Encaisser</b-button>
+                <b-button size="sm" variant="success" @click="$refs.modalEncaissementCommercial.ouvrir(row.item)">Encaisser</b-button>
               </template>
             </b-table>
             <b-pagination
@@ -64,53 +64,98 @@
                 align="right" size="sm" class="mt-2 mb-0"></b-pagination>
           </b-tab>
 
+          <!-- Stock disponible (lecture seule) -->
+          <b-tab title="Stock disponible">
+            <b-form-input type="search" v-model="filtreStock" placeholder="Rechercher un produit…" class="mb-2" style="max-width:320px"></b-form-input>
+            <b-table
+                head-variant="light" bordered hover responsive small
+                :items="stockFiltre" :fields="champsStock"
+                show-empty empty-text="Aucun produit.">
+              <template v-slot:cell(quantite_produit)="row">{{ nf(row.item.quantite_produit) }} kg</template>
+            </b-table>
+          </b-tab>
+
         </b-tabs>
       </div>
     </div>
 
     <!-- Modale de versement -->
-    <b-modal ref="modalVersement" hide-footer :title="titreModale">
+    <b-modal ref="modalVersement" hide-footer :title="titreModale" size="lg">
       <div v-if="cible" class="mb-3 p-2 rounded" style="background:#f6f7fb">
         <div class="d-flex justify-content-between"><span class="text-muted">Total dû</span><span class="font-weight-bold">{{ nf(cibleDu) }} FCFA</span></div>
         <div class="d-flex justify-content-between"><span class="text-muted">Déjà versé</span><span>{{ nf(cibleVerse) }} FCFA</span></div>
-        <div class="d-flex justify-content-between"><span class="text-muted">Reste</span><span class="font-weight-bold text-danger">{{ nf(cibleReste) }} FCFA</span></div>
-        <div v-if="type === 'bl' && cible.monnaie > 0" class="d-flex justify-content-between small text-success">
+        <div class="d-flex justify-content-between"><span class="text-muted">Reste à payer</span><span class="font-weight-bold text-danger">{{ nf(cibleReste) }} FCFA</span></div>
+        <div v-if="cible.monnaie > 0" class="d-flex justify-content-between small text-success">
           <span>Monnaie du client en attente</span><span>{{ nf(cible.monnaie) }} FCFA</span>
         </div>
       </div>
 
-      <b-form-group label="Montant reçu">
-        <b-form-input type="number" min="0" step="any" v-model="montant"></b-form-input>
+      <p class="text-muted small mb-1">Produits de ce bon de livraison :</p>
+      <div class="table-responsive mb-3">
+        <table class="table table-sm table-bordered mb-0">
+          <tr><th>Produit</th><th class="text-right">Quantité</th><th class="text-right">Montant</th></tr>
+          <tr v-for="(l, i) in lignesBl" :key="i">
+            <td>{{ l.libelle }}</td>
+            <td class="text-right">{{ nf(l.quantite) }} kg</td>
+            <td class="text-right">{{ nf(l.montant) }} FCFA</td>
+          </tr>
+          <tr v-if="!lignesBl.length"><td colspan="3" class="text-muted text-center">Chargement…</td></tr>
+        </table>
+      </div>
+
+      <b-row>
+        <b-col md="6">
+          <b-form-group label="Mode de paiement">
+            <search-select v-model="mode" :options="modesPaiement" :clearable="false"></search-select>
+          </b-form-group>
+        </b-col>
+        <b-col md="6">
+          <b-form-group label="Montant reçu (FCFA)" :description="'Reste à payer : ' + nf(cibleReste) + ' FCFA'">
+            <b-input-group append="FCFA">
+              <b-form-input type="number" min="0" step="any" v-model="montant"></b-form-input>
+            </b-input-group>
+          </b-form-group>
+        </b-col>
+      </b-row>
+
+      <b-row v-if="mode === 2 || mode === 3 || mode === 4">
+        <b-col md="6" v-if="mode === 2">
+          <b-form-group label="Réseau">
+            <search-select v-model="reseau" :options="reseaux" placeholder="Orange, MTN, Moov, Wave…"></search-select>
+          </b-form-group>
+        </b-col>
+        <template v-if="mode === 3">
+          <b-col md="6"><b-form-group label="Banque"><b-form-input v-model="banque"></b-form-input></b-form-group></b-col>
+          <b-col md="6"><b-form-group label="N° de chèque"><b-form-input v-model="numeroCheque"></b-form-input></b-form-group></b-col>
+        </template>
+        <b-col md="6" v-if="mode === 4">
+          <b-form-group label="N° de virement">
+            <b-form-input v-model="numeroVirement"></b-form-input>
+          </b-form-group>
+        </b-col>
+      </b-row>
+
+      <b-form-group v-if="mode === 1" label="Monnaie à rendre (FCFA)"
+                    description="Calculée automatiquement si le montant reçu dépasse le reste à payer ; modifiable si besoin.">
+        <b-input-group append="FCFA">
+          <b-form-input type="number" min="0" step="any" v-model="monnaieRendue"></b-form-input>
+        </b-input-group>
       </b-form-group>
 
-      <b-form-group label="Mode de paiement">
-        <search-select v-model="mode" :options="modesPaiement" :clearable="false"></search-select>
-      </b-form-group>
+      <p v-if="!montantValide" class="text-danger small">Le montant reçu doit être positif et au moins égal à la monnaie à rendre.</p>
 
-      <b-form-group v-if="mode === 2" label="Réseau">
-        <search-select v-model="reseau" :options="reseaux" placeholder="Orange, MTN, Moov, Wave…"></search-select>
-      </b-form-group>
-      <template v-if="mode === 3">
-        <b-form-group label="Banque"><b-form-input v-model="banque"></b-form-input></b-form-group>
-        <b-form-group label="N° de chèque"><b-form-input v-model="numeroCheque"></b-form-input></b-form-group>
-      </template>
-      <b-form-group v-if="mode === 4" label="N° de virement">
-        <b-form-input v-model="numeroVirement"></b-form-input>
-      </b-form-group>
-
-      <b-form-group v-if="type === 'bl' && mode === 1" label="Monnaie rendue">
-        <b-form-input type="number" min="0" step="any" v-model="monnaieRendue"></b-form-input>
-      </b-form-group>
-
-      <div class="d-flex" style="gap:.5rem">
+      <div class="d-flex flex-wrap" style="gap:.5rem">
         <b-button variant="success" :disabled="Loading || !montantValide" @click="enregistrer">
           Enregistrer le versement
         </b-button>
-        <b-button v-if="dernierRecu || dernierRecuCommercial" variant="outline-secondary" @click="imprimerRecu">
+        <b-button v-if="dernierRecu" variant="outline-secondary" @click="imprimerRecu">
           <i class="fas fa-print mr-1"></i> Imprimer le reçu
         </b-button>
       </div>
     </b-modal>
+
+    <!-- Encaissement commercial détaillé (produit/quantité), même flux que Dépôt-vente -->
+    <EncaissementModal ref="modalEncaissementCommercial" @success="fetchData" />
   </div>
 </template>
 
@@ -119,21 +164,30 @@ import API_BASE_URL from '@/api/config.js'
 const axios = require('axios')
 import moment from 'moment'
 import PageHeader from '@/components/ui/PageHeader.vue'
+import EncaissementModal from '@/components/commerciaux/EncaissementModal.vue'
 import { imprimerDocument } from '@/utils/print.js'
+import { hasPermission } from '@/utils/permissions'
 
 export default {
   name: "encaissement-index",
-  components: { PageHeader },
+  components: { PageHeader, EncaissementModal },
   data() {
     return {
       Loading: false,
       bl: [],
       commerciaux: [],
+      produits: [],
       filtreBl: '',
       filtreCom: '',
+      filtreStock: '',
       pageBl: 1,
       pageCom: 1,
       perPage: 10,
+      champsStock: [
+        { key: 'code_produit', label: 'Code' },
+        { key: 'libelle_produit', label: 'Produit' },
+        { key: 'quantite_produit', label: 'Stock disponible', class: 'text-right' },
+      ],
       champsBl: [
         { key: 'client_nom', label: 'Client' },
         { key: 'code_facture', label: 'BL' },
@@ -151,8 +205,8 @@ export default {
         { key: 'reste_a_verser', label: 'Reste à verser', class: 'text-right' },
         { key: 'actions', label: '' },
       ],
-      // Modale
-      type: 'bl',        // 'bl' | 'commercial'
+      // Modale de versement — BL clients uniquement (les commerciaux passent
+      // par EncaissementModal, avec déclaration produit/quantité).
       cible: null,
       montant: 0,
       mode: 1,
@@ -162,7 +216,7 @@ export default {
       numeroVirement: '',
       monnaieRendue: 0,
       dernierRecu: null,
-      dernierRecuCommercial: null,
+      lignesBl: [],
       modesPaiement: [
         { value: 1, text: 'Espèces' },
         { value: 2, text: 'Mobile money' },
@@ -178,6 +232,17 @@ export default {
     }
   },
   computed: {
+    peutBl() {
+      return hasPermission('encaissement_bl_clients')
+    },
+    stockFiltre() {
+      const q = this.filtreStock.toLowerCase().trim()
+      const vendables = this.produits.filter(p => !p.est_matiere_premiere)
+      if (!q) return vendables
+      return vendables.filter(p =>
+        String(p.libelle_produit || '').toLowerCase().includes(q) ||
+        String(p.code_produit || '').toLowerCase().includes(q))
+    },
     blFiltres() {
       const q = this.filtreBl.toLowerCase().trim()
       if (!q) return this.bl
@@ -192,21 +257,16 @@ export default {
     },
     titreModale() {
       if (!this.cible) return 'Versement'
-      return this.type === 'bl'
-        ? 'Encaisser — ' + this.cible.code_facture + ' · ' + this.cible.client_nom
-        : 'Encaisser — ' + this.cible.nom
+      return 'Encaisser — ' + this.cible.code_facture + ' · ' + this.cible.client_nom
     },
     cibleDu() {
-      if (!this.cible) return 0
-      return this.type === 'bl' ? this.cible.montant_ttc : this.cible.total_pris
+      return this.cible ? this.cible.montant_ttc : 0
     },
     cibleVerse() {
-      if (!this.cible) return 0
-      return this.type === 'bl' ? this.cible.verse : this.cible.total_verse
+      return this.cible ? this.cible.verse : 0
     },
     cibleReste() {
-      if (!this.cible) return 0
-      return this.type === 'bl' ? this.cible.reste : this.cible.reste_a_verser
+      return this.cible ? this.cible.reste : 0
     },
     montantValide() {
       const m = Number(this.montant)
@@ -216,6 +276,14 @@ export default {
   watch: {
     filtreBl() { this.pageBl = 1 },
     filtreCom() { this.pageCom = 1 },
+    // Calcule automatiquement la monnaie à rendre dès que le montant reçu
+    // dépasse le reste à payer (paiement espèces), pour éviter les erreurs
+    // de calcul manuel ; l'utilisateur peut toujours l'ajuster ensuite.
+    montant(v) {
+      if (this.mode === 1) {
+        this.monnaieRendue = Math.max(0, (Number(v) || 0) - this.cibleReste)
+      }
+    },
   },
   methods: {
     nf(v) {
@@ -223,12 +291,15 @@ export default {
     },
     async fetchData() {
       await axios.get(`${API_BASE_URL}/api/encaissement/en-attente`).then(r => {
-        this.bl = r.data.bl || []
+        // Caisse : périmètre restreint aux commerciaux uniquement (pas de BL clients).
+        this.bl = this.peutBl ? (r.data.bl || []) : []
         this.commerciaux = r.data.commerciaux || []
       }).catch(e => console.log(e))
+      await axios.get(`${API_BASE_URL}/api/produits`).then(r => {
+        this.produits = r.data.element || []
+      }).catch(e => console.log(e))
     },
-    ouvrirVersement(type, row) {
-      this.type = type
+    ouvrirVersement(row) {
       this.cible = row
       this.mode = 1
       this.reseau = null
@@ -237,8 +308,11 @@ export default {
       this.numeroVirement = ''
       this.monnaieRendue = 0
       this.dernierRecu = null
-      this.dernierRecuCommercial = null
       this.montant = this.cibleReste
+      this.lignesBl = []
+      axios.get(`${API_BASE_URL}/api/doc/bl/${row.code_facture}`).then(r => {
+        this.lignesBl = r.data.lignes || []
+      }).catch(e => console.log(e))
       this.$refs.modalVersement.show()
     },
     async enregistrer() {
@@ -247,40 +321,27 @@ export default {
       const today = moment().format('YYYY-MM-DD')
       const modeLabel = (this.modesPaiement.find(m => m.value === this.mode) || {}).text
       try {
-        if (this.type === 'bl') {
-          const data = {
-            code_facture: this.cible.code_facture,
-            client_id: this.cible.client_id,
-            montant_verser: Number(this.montant),
-            monnaie: this.mode === 1 ? (Number(this.monnaieRendue) || 0) : 0,
-            date_versement: today,
-            type: this.mode === 1 ? 2 : 1,
-            type_paiment: this.mode,
-            paiement: {
-              type_paiement: modeLabel,
-              montant: Number(this.montant),
-              banque: this.banque || null,
-              numero_cheque: this.numeroCheque || null,
-              numero_virement: this.numeroVirement || null,
-              numero_telephone: null,
-              reseau: this.reseau || null,
-            },
-          }
-          const r = await axios.post(`${API_BASE_URL}/api/faire_paiement`, data)
-          this.dernierRecu = r.data
-          this.dernierRecuCommercial = null
-          this.$bvToast.toast('Versement enregistré — reçu ' + r.data, { title: 'Encaissement', variant: 'success', solid: true })
-        } else {
-          const r = await axios.post(`${API_BASE_URL}/api/commercial-versements`, {
-            commercial_id: this.cible.id,
+        const data = {
+          code_facture: this.cible.code_facture,
+          client_id: this.cible.client_id,
+          montant_verser: Number(this.montant),
+          monnaie: this.mode === 1 ? (Number(this.monnaieRendue) || 0) : 0,
+          date_versement: today,
+          type: this.mode === 1 ? 2 : 1,
+          type_paiment: this.mode,
+          paiement: {
+            type_paiement: modeLabel,
             montant: Number(this.montant),
-            date_versement: today,
-            mode_paiement: this.mode,
-          })
-          this.dernierRecu = null
-          this.dernierRecuCommercial = (r.data && r.data.id) || null
-          this.$bvToast.toast('Versement du commercial enregistré.', { title: 'Encaissement', variant: 'success', solid: true })
+            banque: this.banque || null,
+            numero_cheque: this.numeroCheque || null,
+            numero_virement: this.numeroVirement || null,
+            numero_telephone: null,
+            reseau: this.reseau || null,
+          },
         }
+        const r = await axios.post(`${API_BASE_URL}/api/faire_paiement`, data)
+        this.dernierRecu = r.data
+        this.$bvToast.toast('Versement enregistré — reçu ' + r.data, { title: 'Encaissement', variant: 'success', solid: true })
         await this.fetchData()
       } catch (e) {
         console.log(e)
@@ -290,9 +351,7 @@ export default {
       this.Loading = false
     },
     imprimerRecu() {
-      if (this.dernierRecuCommercial) {
-        imprimerDocument('recu_commercial', this.dernierRecuCommercial)
-      } else if (this.dernierRecu) {
+      if (this.dernierRecu) {
         imprimerDocument('recu', this.dernierRecu)
       }
     },

@@ -62,6 +62,16 @@
               </b-button>
 
               <b-button
+                  v-if="estResponsable"
+                  size="sm"
+                  variant="outline-warning"
+                  class="mr-1"
+                  @click="ouvrirReajustement(row.item)"
+              >
+                réajuster
+              </b-button>
+
+              <b-button
                   size="sm"
                   variant="outline-danger"
                   class="mr-1"
@@ -83,6 +93,22 @@
     </div>
 
     <Form ref="modal"></Form>
+
+    <b-modal ref="modalReajustement" title="Bon de réajustement de stock" hide-footer>
+      <template v-if="produitAAjuster">
+        <p class="mb-1"><strong>{{ produitAAjuster.libelle_produit }}</strong> ({{ produitAAjuster.code_produit }})</p>
+        <p class="text-muted small mb-3">Stock actuel : {{ new Intl.NumberFormat().format(produitAAjuster.quantite_produit) }} kg</p>
+        <b-form-group label="Nouvelle quantité en stock (kg)">
+          <b-form-input type="number" min="0" step="0.01" v-model="nouvelleQuantiteReajustement"></b-form-input>
+        </b-form-group>
+        <b-form-group label="Motif du réajustement">
+          <b-form-textarea v-model="motifReajustement" rows="2" placeholder="Ex : inventaire physique, correction d'écart..."></b-form-textarea>
+        </b-form-group>
+        <b-button variant="warning" block :disabled="loadingReajustement" @click="confirmerReajustement">
+          Valider le réajustement
+        </b-button>
+      </template>
+    </b-modal>
   </div>
 </template>
 
@@ -103,6 +129,10 @@ export default {
       perPage: 10,
       totalRows: null,
       selectedCode: null,
+      produitAAjuster: null,
+      nouvelleQuantiteReajustement: 0,
+      motifReajustement: '',
+      loadingReajustement: false,
       fields : [
         {
           key:'code_produit',
@@ -142,6 +172,16 @@ export default {
   components: {
     Form,
     PageHeader
+  },
+  computed: {
+    estResponsable() {
+      try {
+        const user = JSON.parse(localStorage.getItem('LoggedUser') || '{}')
+        return [1, 3].includes(user.type_user)
+      } catch (e) {
+        return false
+      }
+    }
   },
   created() {
     flow.clearSale()
@@ -189,6 +229,27 @@ export default {
       }).catch((err) => {
         console.log(err)
       })
+    },
+    ouvrirReajustement(produit) {
+      this.produitAAjuster = produit
+      this.nouvelleQuantiteReajustement = produit.quantite_produit
+      this.motifReajustement = ''
+      this.$refs.modalReajustement.show()
+    },
+    async confirmerReajustement() {
+      if (!this.produitAAjuster) return
+      this.loadingReajustement = true
+      let urlapi = `${API_BASE_URL}/api/produits/${this.produitAAjuster.code_produit}/ajuster-stock`
+      await axios.put(urlapi, {
+        quantite: this.nouvelleQuantiteReajustement,
+        motif: this.motifReajustement
+      }).then(() => {
+        this.$refs.modalReajustement.hide()
+        this.fetchdata()
+      }).catch((err) => {
+        alert(err.response && err.response.data && err.response.data.message ? err.response.data.message : "Erreur lors du réajustement.")
+      })
+      this.loadingReajustement = false
     },
   }
 }

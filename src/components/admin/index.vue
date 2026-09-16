@@ -3,10 +3,13 @@
   <ResponsableDashboard v-else-if="roleResponsable" />
   <CaisseDashboard v-else-if="roleCaisse" />
   <div v-else class="container-fluid p-3">
-    <PageHeader title="Tableau de bord" subtitle="Vue d'ensemble de l'activité" crumb="Grains Moulus">
+    <PageHeader title="Tableau de bord" subtitle="Vue d'ensemble de l'activité" crumb="Café Fortuna">
       <template #actions>
         <b-button variant="outline-primary" @click="fetchdata">
           <i class="fas fa-sync-alt mr-1"></i> Rafraîchir
+        </b-button>
+        <b-button variant="primary" @click="imprimerDashboard">
+          <i class="fas fa-print mr-1"></i> Imprimer
         </b-button>
       </template>
     </PageHeader>
@@ -28,12 +31,13 @@
         </div>
         <div class="col-xl-3 col-md-6 mb-4">
           <StatCard label="Reste à encaisser"
-                    :value="fmt(ventes_a_realiser - ventes_realiser)"
-                    :sub="'TTC : ' + fmt(ventes_a_realiser_ttc - ventes_realiser_ttc)"
+                    :value="fmt(ventes_a_realiser_ttc)"
+                    sub="Solde impayé de tous les BL (TTC), avoirs et versements déjà reçus déduits"
                     icon="fas fa-hourglass-half" variant="primary" />
         </div>
         <div class="col-xl-3 col-md-6 mb-4">
-          <StatCard label="Approvisionnement" :value="fmt(appro)"
+          <StatCard label="Approvisionnement (kg)" :value="nf(appro) + ' kg'"
+                    sub="Stock demandé à l'usine et livré"
                     icon="fas fa-truck-loading" variant="warning" />
         </div>
         <div class="col-xl-3 col-md-6 mb-4">
@@ -88,7 +92,7 @@
                 ok-only ok-title="Fermer"
               >
                 <b-table
-                  small bordered head-variant="light"
+                  small bordered responsive head-variant="light"
                   :items="detailReapproRows"
                   :fields="[{ key:'date', label:'Date' }, { key:'quantite', label:'Réappro', class:'text-right' }]"
                   show-empty empty-text="Aucun réapprovisionnement">
@@ -156,6 +160,9 @@ import StatCard from '@/components/ui/StatCard.vue'
 import UsineDashboard from '@/components/usine/dashboard.vue'
 import ResponsableDashboard from '@/components/responsable/dashboard.vue'
 import CaisseDashboard from '@/components/caisse/dashboard.vue'
+import { genererDocument } from '@/documents'
+import { dashboardResponsable } from '@/documents/builders'
+import moment from 'moment'
 const axios = require('axios')
 //import moment from "moment";
 export default {
@@ -272,7 +279,17 @@ export default {
     },
     nf(value){
       return new Intl.NumberFormat('fr-FR').format(value || 0)
-    }
+    },
+    imprimerDashboard() {
+      genererDocument(dashboardResponsable({
+        date: moment().format('YYYY-MM-DD'),
+        encaisse_ttc: this.ventes_realiser_ttc,
+        reste_ttc: this.ventes_a_realiser_ttc,
+        appro_kg: this.appro,
+        decaissement: this.decaissement,
+        reconRows: this.reconRows,
+      }))
+    },
   },
   computed: {
     // Rôle usine (commercial.type_user === 4) : on affiche le tableau de bord

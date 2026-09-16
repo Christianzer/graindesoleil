@@ -43,9 +43,6 @@
         <b-button variant="outline-primary" class="mb-3 mr-2" @click="ajouterLigne">
           <i class="fas fa-plus mr-1"></i> Ajouter une ligne
         </b-button>
-        <b-button variant="outline-secondary" class="mb-3" @click="$refs.modalNouveauProduit.show()">
-          <i class="fas fa-box-open mr-1"></i> Nouveau produit
-        </b-button>
 
         <div class="text-right">
           <h4 class="text-uppercase text-danger font-weight-bolder">TOTAL : {{ new Intl.NumberFormat().format(total) }} FCFA</h4>
@@ -56,19 +53,6 @@
         </b-button>
       </div>
     </div>
-
-    <b-modal ref="modalNouveauProduit" hide-footer title="Nouveau produit">
-      <b-form-group label="Libellé du produit">
-        <b-form-input v-model="nouveauProduitLibelle" @keyup.enter="creerProduit"></b-form-input>
-      </b-form-group>
-      <p class="text-muted small">
-        Le code est généré automatiquement. Les prix de vente sont renseignés
-        ensuite par le responsable.
-      </p>
-      <b-button variant="success" block :disabled="Loading || !nouveauProduitLibelle.trim()" @click="creerProduit">
-        Créer le produit
-      </b-button>
-    </b-modal>
   </div>
 </template>
 
@@ -89,15 +73,17 @@ export default {
       fournisseurId: null,
       dateAppro: moment().format('YYYY-MM-DD'),
       lignes: [{ code_produit: null, quantite: 1, prix_achat_unitaire: 0 }],
-      nouveauProduitLibelle: '',
     }
   },
   computed: {
     fournisseurOptions() {
       return this.fournisseurs.map(f => ({ value: f.id, text: f.nom }))
     },
+    // Les fournisseurs livrent la matière première (café grain) : seul le
+    // produit dédié à ce stock partagé (voir est_matiere_premiere) apparaît
+    // ici, jamais un produit fini vendable.
     produitOptions() {
-      return this.produits.map(p => ({ value: p.code_produit, text: p.libelle_produit }))
+      return this.produits.filter(p => p.est_matiere_premiere).map(p => ({ value: p.code_produit, text: p.libelle_produit }))
     },
     total() {
       return this.lignes.reduce((t, l) => t + (l.quantite || 0) * (l.prix_achat_unitaire || 0), 0)
@@ -114,31 +100,10 @@ export default {
         .filter((_, i) => i !== index)
         .map(l => l.code_produit)
         .filter(Boolean)
-      return this.produits
-        .filter(p => !prisAilleurs.includes(p.code_produit))
-        .map(p => ({ value: p.code_produit, text: p.libelle_produit }))
+      return this.produitOptions.filter(o => !prisAilleurs.includes(o.value))
     },
     ajouterLigne() {
       this.lignes.push({ code_produit: null, quantite: 1, prix_achat_unitaire: 0 })
-    },
-    async creerProduit() {
-      const libelle = this.nouveauProduitLibelle.trim()
-      if (this.Loading || !libelle) return
-      this.Loading = true
-      await axios.post(`${API_BASE_URL}/api/produits`, { libelle_produit: libelle }).then(response => {
-        if (response.status === 201 && response.data && response.data.code_produit) {
-          const p = { code_produit: response.data.code_produit, libelle_produit: response.data.libelle_produit }
-          this.produits.push(p)
-          this.lignes.push({ code_produit: p.code_produit, quantite: 1, prix_achat_unitaire: 0 })
-          this.nouveauProduitLibelle = ''
-          this.$refs.modalNouveauProduit.hide()
-          this.$bvToast.toast('Produit créé : ' + p.libelle_produit + ' (' + p.code_produit + ')', { title: 'Produit', variant: 'success', solid: true })
-        }
-      }).catch((err) => {
-        console.log(err)
-        this.$bvToast.toast('Erreur lors de la création du produit.', { title: 'Produit', variant: 'danger', solid: true })
-      })
-      this.Loading = false
     },
     async valider() {
       if (this.Loading) return

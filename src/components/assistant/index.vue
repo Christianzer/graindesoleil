@@ -82,7 +82,7 @@
           </div>
           <b-table
             v-else
-            small bordered hover
+            small bordered hover responsive
             :items="clients"
             :fields="clientFields"
             :filter="filterClient"

@@ -78,6 +78,15 @@
                 >
                   <i class="fas fa-print mr-1"></i>Imprimer l'avoir
                 </b-button>
+                <b-button
+                    v-if="peutSupprimer"
+                    size="sm"
+                    class="mr-1 mt-1"
+                    variant="outline-danger"
+                    @click="supprimer(row.item.code_facture)"
+                >
+                  <i class="fas fa-trash mr-1"></i>Supprimer
+                </b-button>
               </template>
 
               <!-- Ligne de bon de livraison -->
@@ -122,6 +131,16 @@
                 Avoir émis : {{ new Intl.NumberFormat().format(Math.floor(row.item.avoir_total || 0)) }} FCFA
               </b-badge>
 
+              <b-button
+                  v-if="peutSupprimer"
+                  size="sm"
+                  class="mr-1 mt-1"
+                  variant="outline-danger"
+                  @click="supprimer(row.item.code_facture)"
+              >
+                <i class="fas fa-trash mr-1"></i>Supprimer
+              </b-button>
+
               </template>
 
             </template>
@@ -161,6 +180,7 @@
   import flow from "@/store/flow";
   import PageHeader from "@/components/ui/PageHeader.vue";
   import { ouvrirDocument, imprimerDocument } from "@/utils/print.js";
+  import { hasPermission } from "@/utils/permissions";
   const axios = require('axios')
   export default {
     name: "index",
@@ -244,10 +264,23 @@
         var id = this.$route.params.id
         let api_data = `${API_BASE_URL}/api/imprimer_recapitulatif/`+id
         ouvrirDocument(api_data);
-      }
+      },
+      async supprimer(code_facture) {
+        if (!window.confirm(`Supprimer le document ${code_facture} ? Le stock et les versements associés seront annulés.`)) return
+        await axios.delete(`${API_BASE_URL}/api/factures/${code_facture}`).then(() => {
+          this.$bvToast.toast(`${code_facture} supprimé.`, { title: 'Suppression', variant: 'success', solid: true })
+          this.listes()
+        }).catch((err) => {
+          const msg = (err.response && err.response.data && err.response.data.message) || 'Erreur lors de la suppression.'
+          this.$bvToast.toast(msg, { title: 'Suppression', variant: 'danger', solid: true })
+        })
+      },
     },
 
     computed: {
+      peutSupprimer() {
+        return hasPermission('supprimer_documents')
+      },
       // Aplatit la liste : chaque bon de livraison suivi de ses avoirs en lignes distinctes.
       displayRows() {
         const out = []
