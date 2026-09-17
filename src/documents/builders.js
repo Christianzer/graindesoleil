@@ -131,13 +131,28 @@ export function recu (d) {
   }
   infos.push(['Reste dû', { text: fcfa(d.reste_du), bold: true, color: COULEURS.rouge }])
 
+  const contenu = [blocInfos(infos.map(([k, v]) => [k, v]))]
+  // Versement issu d'une déclaration de vente (voir CommercialFichesController::
+  // store) : lister les quantités vendues ayant donné lieu à ce paiement,
+  // sinon le reçu ne montre que des montants sans le détail produit/quantité.
+  if (d.lignes && d.lignes.length) {
+    contenu.push(sousTitre('Quantités vendues déclarées'))
+    contenu.push(tableauLignes(
+      [
+        { text: 'Produit', key: 'libelle' },
+        { text: 'Qté (kg)', key: 'q', align: 'right' },
+        { text: 'P.U. (FCFA)', key: 'pu', align: 'right' },
+        { text: 'Montant (FCFA)', key: 'm', align: 'right' },
+      ],
+      d.lignes.map(l => ({ libelle: l.libelle, q: kg(l.quantite), pu: nombre(l.prix_unitaire), m: nombre(l.montant) })),
+    ))
+  }
+  contenu.push(blocSignatures([commercial ? 'Le commercial' : 'Le client', 'La caisse']))
+
   return {
     titre: 'REÇU DE VERSEMENT',
     meta: [`N° ${d.numero}`, dateLongue(d.date)],
-    contenu: [
-      blocInfos(infos.map(([k, v]) => [k, v])),
-      blocSignatures([commercial ? 'Le commercial' : 'Le client', 'La caisse']),
-    ],
+    contenu,
     filename: `RECU_${d.numero}.pdf`,
   }
 }
