@@ -111,39 +111,30 @@
             <b-thead>
               <b-tr class="text-left font-weight-bold">
                 <b-th>Date Versement</b-th>
+                <b-th>Source</b-th>
                 <b-th>Code Versement</b-th>
                 <b-th>Code facture</b-th>
-                <b-th>Client</b-th>
+                <b-th>Client / Commercial</b-th>
                 <b-th>Moyen Paiement</b-th>
                 <b-th>Montant Encaissé FCFA</b-th>
 
               </b-tr>
             </b-thead>
             <b-tbody>
-              <b-tr class="font-weight-bold" v-for="item in element" :key="item.code_facture">
+              <b-tr class="font-weight-bold" v-for="(item, i) in element" :key="i">
                 <b-td>{{changerDate(item.date_versement)}}</b-td>
-                <b-td>{{item.code_versement}}</b-td>
-                <b-td>{{item.code_facture}}</b-td>
+                <b-td>{{item.source || 'Client'}}</b-td>
+                <b-td>{{item.code_versement || '—'}}</b-td>
+                <b-td>{{item.code_facture || '—'}}</b-td>
                 <b-td>{{item.nom}} {{item.prenoms}}</b-td>
-                <b-td v-if="item.type_paiement === 1">
-                  Espèce
-                </b-td>
-                <b-td v-if="item.type_paiement === 2">
-                  Chèque
-                </b-td>
-                <b-td v-if="item.type_paiement === 3">
-                  Mobile Monney
-                </b-td>
-                <b-td v-if="item.type_paiement === 4">
-                  Monnaie Client
-                </b-td>
+                <b-td>{{item.mode_paiement_label || libellePaiement(item.type_paiement)}}</b-td>
                 <b-td class="text-right">{{new Intl.NumberFormat().format(item.montant_verser)}}</b-td>
 
               </b-tr>
             </b-tbody>
             <b-tfoot>
               <b-tr class="text-right font-weight-bold text-danger">
-                <b-td colspan="5" class="text-right">TOTAL FCFA</b-td>
+                <b-td colspan="6" class="text-right">TOTAL FCFA</b-td>
                 <b-td class="text-right">{{new Intl.NumberFormat().format(Math.round(totalMontantVersTTC))}}</b-td>
               </b-tr>
             </b-tfoot>
@@ -416,6 +407,10 @@ export default {
     },
     modePaiementCommercial(v){
       const labels = { 1: 'Espèces', 2: 'Mobile money', 3: 'Chèque', 4: 'Virement' }
+      return labels[v] || '—'
+    },
+    libellePaiement(v){
+      const labels = { 1: 'Espèce', 2: 'Chèque', 3: 'Mobile Monney', 4: 'Monnaie Client' }
       return labels[v] || '—'
     },
     async imprimer(){
