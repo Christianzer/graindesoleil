@@ -100,10 +100,13 @@
             <b-button size="sm" variant="outline-secondary" class="mr-1" @click="ouvrirConsultation(row.item)">
               Consulter
             </b-button>
-            <b-button size="sm" variant="outline-primary" class="mr-1" @click="ouvrirLivraison(row.item)" v-if="peutLivrer && row.item.statut !== 3">
+            <b-button size="sm" variant="outline-primary" class="mr-1" @click="ouvrirLivraison(row.item)" v-if="peutLivrer && row.item.statut !== 3 && row.item.statut !== 4">
               Traiter / livrer
             </b-button>
-            <b-button size="sm" variant="outline-secondary" @click="imprimerTransfert(row.item)" v-if="row.item.statut !== 1" title="Bon de transfert">
+            <b-button size="sm" variant="outline-danger" class="mr-1" @click="annulerDemande(row.item)" v-if="peutCreer && row.item.statut === 1" title="Annuler cette demande (tant que l'usine n'a rien livré)">
+              Annuler
+            </b-button>
+            <b-button size="sm" variant="outline-secondary" @click="imprimerTransfert(row.item)" v-if="row.item.statut !== 1 && row.item.statut !== 4" title="Bon de transfert">
               <i class="fas fa-print"></i>
             </b-button>
           </template>
@@ -257,6 +260,7 @@ export default {
         { key: 'code_demande', label: 'Code' },
         { key: 'date_demande', label: 'Date', formatter: (v) => this.$dateFr(v) },
         { key: 'statut', label: 'Statut' },
+        { key: 'saisi_par', label: 'Saisi par', formatter: (v) => v || '—' },
         { key: 'actions' },
       ],
       champsApercu: [
@@ -383,6 +387,23 @@ export default {
         this.$bvToast.toast(msg, { title: 'Demande', variant: 'danger', solid: true })
       })
       this.Loading = false
+    },
+    async annulerDemande(demande) {
+      const ok = await this.$bvModal.msgBoxConfirm(
+        `Annuler la demande ${demande.code_demande} ? L'usine ne pourra plus la livrer.`,
+        { title: 'Annuler la demande', okTitle: 'Annuler la demande', cancelTitle: 'Garder', okVariant: 'danger', centered: true }
+      )
+      if (!ok) return
+      await axios.post(`${API_BASE_URL}/api/demandes/${demande.code_demande}/annuler`).then(() => {
+        this.$bvToast.toast('Demande annulée.', { title: 'Demande', variant: 'success', solid: true })
+        this.fetchDemandes()
+        this.fetchApercuStock()
+      }).catch((err) => {
+        console.log(err)
+        const msg = (err.response && err.response.data && err.response.data.message) || "Impossible d'annuler la demande."
+        this.$bvToast.toast(msg, { title: 'Demande', variant: 'danger', solid: true })
+        this.fetchDemandes()
+      })
     },
     async fetchDemandes() {
       await axios.get(`${API_BASE_URL}/api/demandes`).then(response => {

@@ -142,6 +142,11 @@ export default {
           class: 'text-right',
           sortable: true
         },
+        { key: 'saisi_par',
+          label: 'Saisi par',
+          sortable: true,
+          formatter: (v) => v || '—'
+        },
 
         { key: 'actions',
           sortable: true

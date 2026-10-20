@@ -24,13 +24,13 @@
               <search-select v-model="ligne.code_produit" :options="optionsPourLigne(index)"></search-select>
             </td>
             <td>
-              <b-form-input type="number" min="1" v-model="ligne.quantite"></b-form-input>
+              <b-form-input type="number" min="0" step="any" v-model="ligne.quantite"></b-form-input>
             </td>
             <td>
-              <b-form-input type="number" min="0" v-model="ligne.prix_achat_unitaire"></b-form-input>
+              <b-form-input type="text" inputmode="numeric" :formatter="entier" v-model="ligne.prix_achat_unitaire"></b-form-input>
             </td>
             <td class="font-weight-bold text-right align-middle">
-              {{ new Intl.NumberFormat().format((ligne.quantite || 0) * (ligne.prix_achat_unitaire || 0)) }} FCFA
+              {{ new Intl.NumberFormat().format(totalLigne(ligne)) }} FCFA
             </td>
             <td class="align-middle">
               <b-button size="sm" variant="danger" @click="lignes.splice(index, 1)">
@@ -86,13 +86,20 @@ export default {
       return this.produits.filter(p => p.est_matiere_premiere).map(p => ({ value: p.code_produit, text: p.libelle_produit }))
     },
     total() {
-      return this.lignes.reduce((t, l) => t + (l.quantite || 0) * (l.prix_achat_unitaire || 0), 0)
+      return this.lignes.reduce((t, l) => t + this.totalLigne(l), 0)
     },
     peutValider() {
       return this.fournisseurId && this.lignes.some(l => l.code_produit && l.quantite > 0)
     }
   },
   methods: {
+    // Les montants sont en FCFA : entiers, sans virgule ni centimes.
+    entier(valeur) {
+      return String(valeur).replace(/[^0-9]/g, '')
+    },
+    totalLigne(ligne) {
+      return Math.round((Number(ligne.quantite) || 0) * (parseInt(ligne.prix_achat_unitaire, 10) || 0))
+    },
     // Options produit d'une ligne : on retire les produits déjà choisis sur
     // les autres lignes (on garde la sélection de la ligne courante).
     optionsPourLigne(index) {
@@ -111,7 +118,9 @@ export default {
       const data = {
         fournisseur_id: this.fournisseurId,
         date_appro: this.dateAppro,
-        lignes: this.lignes.filter(l => l.code_produit && l.quantite > 0),
+        lignes: this.lignes
+          .filter(l => l.code_produit && l.quantite > 0)
+          .map(l => ({ ...l, quantite: Number(l.quantite), prix_achat_unitaire: parseInt(l.prix_achat_unitaire, 10) || 0 })),
       }
       await axios.post(`${API_BASE_URL}/api/approvisionnements`, data).then(response => {
         if (response.status === 201) {

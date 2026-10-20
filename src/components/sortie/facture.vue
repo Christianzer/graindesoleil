@@ -30,7 +30,7 @@
         <div class="col-md-6">
           <b-form-group
               label="Montant">
-            <b-form-input type="number" :max="total_entre" v-model="formData.montant" :state="validation" id="feedback-user"></b-form-input>
+            <b-form-input type="number" :max="total_entre" v-entier v-model="formData.montant" :state="validation" id="feedback-user"></b-form-input>
             <b-form-invalid-feedback :state="validation">
               Le montant saisi doit être inferieur à celui du total encaissé et doit être supérieur à 0.
               Total encaissé = {{new Intl.NumberFormat().format(total_entre)}}

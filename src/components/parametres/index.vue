@@ -64,13 +64,30 @@
           <div class="row">
             <div class="col-md-4">
               <b-form-group label="Seuil de solde cumulé commercial (FCFA)" description="Au-delà de ce solde dû, une nouvelle cession à un commercial doit être validée par le responsable.">
-                <b-form-input type="number" min="0" v-model.number="formData.seuil_solde_commercial"></b-form-input>
+                <b-form-input type="number" min="0" v-entier v-model.number="formData.seuil_solde_commercial"></b-form-input>
               </b-form-group>
             </div>
           </div>
 
           <b-button variant="primary" :disabled="isSubmitting" @click="save">Enregistrer</b-button>
         </template>
+      </div>
+    </div>
+
+    <div class="card shadow mb-4" v-if="estAdmin">
+      <div class="card-body">
+        <h5 class="mb-1">Sauvegarde complète</h5>
+        <p class="text-muted mb-3">
+          Un seul fichier ZIP : base de données, backend, PWA, installeur Windows et code source du frontend.
+          Une copie est aussi créée automatiquement sur le serveur tous les 15 jours. Le fichier contient les mots de passe
+          de la base (.env) : à conserver en lieu sûr.
+        </p>
+        <b-button variant="primary" :disabled="backupEnCours" @click="lancerBackup">
+          <b-spinner small v-if="backupEnCours" class="mr-1"></b-spinner>
+          <i class="fas fa-download mr-1" v-else></i>
+          {{ backupEnCours ? 'Préparation du backup… (peut durer une minute)' : 'Télécharger le backup' }}
+        </b-button>
+        <div v-if="backupChemin" class="mt-3 text-success small">Backup enregistré : {{ backupChemin }}</div>
       </div>
     </div>
   </div>
@@ -80,6 +97,7 @@
 import API_BASE_URL from '@/api/config.js'
 const axios = require('axios')
 import PageHeader from "@/components/ui/PageHeader.vue";
+import { telechargerBackup } from '@/utils/backup'
 
 export default {
   name: "parametres",
@@ -88,6 +106,8 @@ export default {
     return {
       loader: false,
       isSubmitting: false,
+      backupEnCours: false,
+      backupChemin: '',
       formData: {
         nom: '', adresse: '', telephone: '', email: '',
         rccm: '', ncc: '', regime_fiscal: '', capital: '',
@@ -96,11 +116,34 @@ export default {
     }
   },
   computed: {
+    estAdmin() {
+      try {
+        // Admin (1) et Responsable (3)
+        return [1, 3].includes(Number(JSON.parse(localStorage.getItem('LoggedUser')).type_user))
+      } catch (e) {
+        return false
+      }
+    },
     aDesRenseignements() {
       return Object.values(this.formData).some(v => v === 'À renseigner')
     }
   },
   methods: {
+    async lancerBackup() {
+      if (this.backupEnCours) return
+      this.backupEnCours = true
+      this.backupChemin = ''
+      try {
+        this.backupChemin = (await telechargerBackup()) || ''
+        if (this.backupChemin) {
+          this.$bvToast.toast('Backup enregistré.', { title: 'Sauvegarde', variant: 'success', solid: true })
+        }
+      } catch (err) {
+        console.log(err)
+        this.$bvToast.toast('Le backup a échoué.', { title: 'Sauvegarde', variant: 'danger', solid: true })
+      }
+      this.backupEnCours = false
+    },
     async fetchParametres() {
       this.loader = false
       await axios.get(`${API_BASE_URL}/api/parametres`).then(response => {

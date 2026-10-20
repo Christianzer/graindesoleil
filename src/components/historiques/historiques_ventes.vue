@@ -109,6 +109,12 @@ export default {
           label: 'Statut FNE',
         },
         {
+          key: 'saisi_par',
+          label: 'Saisi par',
+          sortable: true,
+          formatter: (v) => v || '—',
+        },
+        {
           key: 'actions'
         },
       ]

@@ -231,6 +231,11 @@ const routes = [
         component: () => import('@/components/commerciaux/compte.vue')
       },
       {
+        name: 'clotures',
+        path: '/clotures',
+        component: () => import('@/components/clotures/index.vue')
+      },
+      {
         name: 'parametres',
         path: '/parametres',
         component: () => import('@/components/parametres/index.vue')

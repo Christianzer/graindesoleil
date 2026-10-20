@@ -85,7 +85,7 @@
 
     <b-modal ref="modalReglement" hide-footer title="Règlement fournisseur">
       <b-form-group label="Montant versé">
-        <b-form-input type="number" v-model="montantReglement"></b-form-input>
+        <b-form-input type="text" inputmode="numeric" :formatter="entier" v-model="montantReglement"></b-form-input>
       </b-form-group>
       <b-button variant="success" block :disabled="Loading" @click="regler">Valider le règlement</b-button>
     </b-modal>
@@ -129,6 +129,7 @@ export default {
         { key: 'date_appro', label: 'Date', formatter: (v) => this.$dateFr(v) },
         { key: 'montant_total', label: 'Montant' },
         { key: 'verse', label: 'Versé' },
+        { key: 'saisi_par', label: 'Saisi par', formatter: (v) => v || '—' },
         { key: 'actions' },
       ],
     }
@@ -140,6 +141,10 @@ export default {
     })
   },
   methods: {
+    // Montant en FCFA : entier, sans virgule ni centimes.
+    entier(valeur) {
+      return String(valeur).replace(/[^0-9]/g, '')
+    },
     onFiltered(filteredItems) {
       this.totalRows = filteredItems.length
       this.currentPage = 1
@@ -192,7 +197,7 @@ export default {
       const api = `${API_BASE_URL}/api/approvisionnements/regler`
       await axios.post(api, {
         code_appro: this.selectedAppro.code_appro,
-        montant_verser: parseFloat(this.montantReglement),
+        montant_verser: parseInt(this.montantReglement, 10) || 0,
       }).then(async () => {
         this.$refs.modalReglement.hide()
         await this.voirApprovisionnements(this.selectedFournisseur)

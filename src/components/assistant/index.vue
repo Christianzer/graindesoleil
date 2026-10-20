@@ -126,7 +126,7 @@
                 <tr v-for="p in produitsFiltres" :key="p.id_article" :class="{ 'table-success': Number(p.quantite_acheter) > 0 }">
                   <td>{{ p.libelle_produit }}</td>
                   <td>{{ p.quantite_produit }}</td>
-                  <td><b-form-input type="number" size="sm" v-model="p.prix_vente" /></td>
+                  <td><b-form-input type="number" size="sm" v-entier v-model="p.prix_vente" /></td>
                   <td><b-form-input type="number" size="sm" min="0" :max="p.quantite_produit" v-model="p.quantite_acheter" /></td>
                   <td class="text-right font-weight-bold">
                     {{ money((Number(p.prix_vente) || 0) * (Number(p.quantite_acheter) || 0)) }} FCFA

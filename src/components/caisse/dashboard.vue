@@ -25,10 +25,26 @@
       <!-- Figures du jour -->
       <div class="row">
         <div class="col-xl-3 col-md-6 mb-4">
-          <StatCard label="Encaissé (jour)"
-                    :value="fmt(data.encaisse_jour)"
-                    :sub="'BL ' + fmt(data.encaisse_bl) + ' · Comm. ' + fmt(data.encaisse_commerciaux)"
-                    icon="fas fa-check-circle" variant="accent" />
+          <div class="obf-clickable" @click="$refs.detailEncaisse.ouvrir()">
+            <StatCard label="Encaissé (jour)"
+                      :value="fmt(data.encaisse_jour)"
+                      :sub="'BL ' + fmt(data.encaisse_bl) + ' · Comm. ' + fmt(data.encaisse_commerciaux) + ' — cliquer pour le détail'"
+                      icon="fas fa-check-circle" variant="accent" />
+          </div>
+          <DetailProduitsModal ref="detailEncaisse" title="Encaissé du jour — produits des BL encaissés"
+                               url="/api/dashboard/detail/encaisse" :params="{ debut: date, fin: date }"
+                               :note="'Journée du ' + date + '. Bons de livraison clients uniquement : les versements des commerciaux (' + fmt(data.encaisse_commerciaux) + ') ont leur propre carte.'" />
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+          <div class="obf-clickable" @click="$refs.detailVerse.ouvrir()">
+            <StatCard label="Versé par les commerciaux (jour)"
+                      :value="fmt(data.encaisse_commerciaux)"
+                      sub="Cliquer : détail par produit"
+                      icon="fas fa-hand-holding-usd" variant="accent" />
+          </div>
+          <DetailProduitsModal ref="detailVerse" title="Versé par les commerciaux — produits concernés"
+                               url="/api/dashboard/detail/verse-commerciaux" :params="{ debut: date, fin: date }"
+                               :avec-depot="true" :note="'Versements reçus le ' + date + ', répartis sur les produits cédés au commercial.'" />
         </div>
         <div class="col-xl-3 col-md-6 mb-4">
           <StatCard label="Autres entrées (jour)"
@@ -57,7 +73,7 @@
             </div>
             <div class="card-body">
               <div class="obf-ae">
-                <div class="obf-ae__row">
+                <div v-if="!estCaisse" class="obf-ae__row obf-clickable" @click="$refs.detailReste.ouvrir()" title="Voir les produits concernés">
                   <span class="obf-ae__label">
                     <i class="fas fa-file-invoice text-muted mr-2"></i>BL clients
                     <b-badge variant="light">{{ data.a_encaisser.bl.nombre }}</b-badge>
@@ -76,6 +92,8 @@
                   <span class="obf-ae__val text-danger">{{ fmt(data.a_encaisser.total) }}</span>
                 </div>
               </div>
+              <DetailProduitsModal v-if="!estCaisse" ref="detailReste" title="Reste à encaisser — produits des BL impayés"
+                                   url="/api/dashboard/detail/reste" note="Tous les bons de livraison clients non soldés, quelle que soit leur date." />
               <router-link :to="{ name: 'caisses' }" class="btn btn-sm btn-primary btn-block mt-3">
                 Aller à l'encaissement
               </router-link>
@@ -118,11 +136,12 @@ const axios = require('axios')
 import moment from "moment";
 import PageHeader from "@/components/ui/PageHeader.vue";
 import StatCard from "@/components/ui/StatCard.vue";
+import DetailProduitsModal from "@/components/ui/DetailProduitsModal.vue";
 import { imprimerDocument } from "@/utils/print.js";
 
 export default {
   name: "caisse-dashboard",
-  components: { PageHeader, StatCard },
+  components: { PageHeader, StatCard, DetailProduitsModal },
   data() {
     return {
       loaded: false,
@@ -139,8 +158,19 @@ export default {
         { key: 'source', label: 'Source' },
         { key: 'nom', label: 'Client / commercial' },
         { key: 'montant', label: 'Montant', class: 'text-right' },
+        { key: 'saisi_par', label: 'Saisi par' },
       ],
     }
+  },
+  computed: {
+    // Rôle Caisse (5) : pas d'informations clients (créances, noms, BL).
+    estCaisse() {
+      try {
+        return Number(JSON.parse(localStorage.getItem('LoggedUser')).type_user) === 5
+      } catch (e) {
+        return false
+      }
+    },
   },
   methods: {
     fmt(v) {
@@ -164,6 +194,8 @@ export default {
 </script>
 
 <style scoped>
+.obf-clickable { cursor: pointer; }
+.obf-ae__row.obf-clickable:hover { background: rgba(79, 70, 229, .06); }
 .obf-ae__row {
   display: flex;
   align-items: center;

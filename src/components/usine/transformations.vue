@@ -296,6 +296,7 @@ export default {
         { key: 'libelle_produit', label: 'Produit' },
         { key: 'derniere_etape', label: 'Dernière étape faite' },
         { key: 'date_debut', label: 'Démarré le', formatter: (v) => this.$dateFr(v) },
+        { key: 'saisi_par', label: 'Saisi par', formatter: (v) => v || '—' },
         { key: 'actions', label: '' },
       ],
       ligneFields: [
@@ -314,6 +315,7 @@ export default {
         { key: 'perte', label: 'Perte (kg)' },
         { key: 'perte_pct', label: 'Perte (%)' },
         { key: 'date_transformation', label: 'Date', formatter: (v) => this.$dateFr(v) },
+        { key: 'saisi_par', label: 'Saisi par', formatter: (v) => v || '—' },
       ],
     }
   },

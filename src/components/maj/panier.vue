@@ -32,7 +32,7 @@
                 <b-form-input readonly class="font-weight-bold" style="font-size: small" :value="selected.quantite_produit - selected.quantite_acheter"/>
               </td>
               <td>
-                <b-form-input type="number" class="font-weight-bold" style="font-size: small" v-model="selected.prix_vente"/>
+                <b-form-input type="number" class="font-weight-bold" style="font-size: small" v-entier v-model="selected.prix_vente"/>
               </td>
               <td class="text-center" width="10%">
                 <b-form-input type="number" class="font-weight-bold" style="font-size: small" min="1" :max="selected.quantite_produit"  v-model="selected.quantite_acheter"/>
@@ -144,7 +144,7 @@
                         label="Montant versé"
                         label-for="input-horizontal"
                     >
-                        <b-form-input type="number" v-model="montant_deposer" min="0"></b-form-input>
+                        <b-form-input type="number" v-entier v-model="montant_deposer" min="0"></b-form-input>
                     </b-form-group>
                 </div>
                 <div class="col-md-4">

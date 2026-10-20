@@ -30,7 +30,7 @@
         <div class="col-md-6">
           <b-form-group
               label="Montant">
-            <b-form-input type="number" v-model="formData.montant"></b-form-input>
+            <b-form-input type="number" v-entier v-model="formData.montant"></b-form-input>
           </b-form-group>
         </div>
       </div>

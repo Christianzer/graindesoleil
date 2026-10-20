@@ -201,6 +201,7 @@
           { key: 'montant_total_ttc', label: 'Montant Total', sortable: true },
           { key: 'montant_verser', label: 'Montant Versé', sortable: true },
           { key: 'reste_payer', label: 'Reste à payer', sortable: true },
+          { key: 'saisi_par', label: 'Saisi par', sortable: true, formatter: (v) => v || '—' },
           { key: 'actions' },
         ],
       }

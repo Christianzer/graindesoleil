@@ -117,6 +117,7 @@
                 <b-th>Client / Commercial</b-th>
                 <b-th>Moyen Paiement</b-th>
                 <b-th>Montant Encaissé FCFA</b-th>
+                <b-th>Saisi par</b-th>
 
               </b-tr>
             </b-thead>
@@ -129,6 +130,7 @@
                 <b-td>{{item.nom}} {{item.prenoms}}</b-td>
                 <b-td>{{item.mode_paiement_label || libellePaiement(item.type_paiement)}}</b-td>
                 <b-td class="text-right">{{new Intl.NumberFormat().format(item.montant_verser)}}</b-td>
+                <b-td>{{item.saisi_par || '—'}}</b-td>
 
               </b-tr>
             </b-tbody>
@@ -136,6 +138,7 @@
               <b-tr class="text-right font-weight-bold text-danger">
                 <b-td colspan="6" class="text-right">TOTAL FCFA</b-td>
                 <b-td class="text-right">{{new Intl.NumberFormat().format(Math.round(totalMontantVersTTC))}}</b-td>
+                <b-td></b-td>
               </b-tr>
             </b-tfoot>
           </b-table-simple>
@@ -148,6 +151,7 @@
                 <b-th>Commercial</b-th>
                 <b-th>Mode de paiement</b-th>
                 <b-th>Montant Encaissé FCFA</b-th>
+                <b-th>Saisi par</b-th>
               </b-tr>
             </b-thead>
             <b-tbody>
@@ -156,12 +160,14 @@
                 <b-td>{{item.nom}}</b-td>
                 <b-td>{{modePaiementCommercial(item.mode_paiement)}}</b-td>
                 <b-td class="text-right">{{new Intl.NumberFormat().format(item.montant)}}</b-td>
+                <b-td>{{item.saisi_par || '—'}}</b-td>
               </b-tr>
             </b-tbody>
             <b-tfoot>
               <b-tr class="text-right font-weight-bold text-danger">
                 <b-td colspan="3" class="text-right">TOTAL FCFA</b-td>
                 <b-td class="text-right">{{new Intl.NumberFormat().format(Math.round(total1))}}</b-td>
+                <b-td></b-td>
               </b-tr>
             </b-tfoot>
           </b-table-simple>
@@ -174,6 +180,7 @@
                 <b-th>Code Decaissement</b-th>
                 <b-th>Libelle Decaissement</b-th>
                 <b-th>Montant Decaissement FCFA</b-th>
+                <b-th>Saisi par</b-th>
 
               </b-tr>
             </b-thead>
@@ -183,6 +190,7 @@
                 <b-td>{{item.code_sortie}}</b-td>
                 <b-td>{{item.libelle_sortie_caisse}}</b-td>
                 <b-td class="text-right">{{new Intl.NumberFormat().format(item.montant_sortie_caisse)}}</b-td>
+                <b-td>{{item.saisi_par || '—'}}</b-td>
 
               </b-tr>
             </b-tbody>
@@ -190,6 +198,7 @@
               <b-tr class="text-right font-weight-bold text-danger">
                 <b-td colspan="2" class="text-right">TOTAL FCFA</b-td>
                 <b-td class="text-right">{{new Intl.NumberFormat().format(Math.round(total1))}}</b-td>
+                <b-td></b-td>
               </b-tr>
             </b-tfoot>
           </b-table-simple>
@@ -202,26 +211,30 @@
                 <b-th>Mouvement</b-th>
                 <b-th class="text-right">Cédé</b-th>
                 <b-th class="text-right">Versé</b-th>
+                <b-th>Saisi par</b-th>
               </b-tr>
             </b-thead>
             <b-tbody v-for="commercial in element" :key="commercial.id">
               <b-tr class="bg-light text-uppercase font-weight-bold">
-                <b-td colspan="4">{{commercial.nom}}</b-td>
+                <b-td colspan="5">{{commercial.nom}}</b-td>
               </b-tr>
               <b-tr v-for="(m, i) in commercial.mouvements" :key="commercial.id + '-' + i">
                 <b-td>{{changerDate(m.date)}}</b-td>
                 <b-td>{{m.libelle}}</b-td>
                 <b-td class="text-right">{{m.type === 'cession' ? new Intl.NumberFormat().format(m.montant) : ''}}</b-td>
                 <b-td class="text-right">{{m.type === 'versement' ? new Intl.NumberFormat().format(m.montant) : ''}}</b-td>
+                <b-td>{{m.saisi_par || '—'}}</b-td>
               </b-tr>
               <b-tr class="font-weight-bold">
                 <b-td colspan="2" class="text-right text-uppercase">Sous-total</b-td>
                 <b-td class="text-right">{{new Intl.NumberFormat().format(Math.round(commercial.st_cede))}}</b-td>
                 <b-td class="text-right">{{new Intl.NumberFormat().format(Math.round(commercial.st_verse))}}</b-td>
+                <b-td></b-td>
               </b-tr>
               <b-tr class="font-weight-bold" :class="{'text-white bg-danger': commercial.st_reste > 0}">
                 <b-td colspan="3" class="text-right text-uppercase">Reste à verser</b-td>
                 <b-td class="text-right">{{new Intl.NumberFormat().format(Math.round(commercial.st_reste))}}</b-td>
+                <b-td></b-td>
               </b-tr>
             </b-tbody>
             <b-tfoot>
@@ -229,10 +242,12 @@
                 <b-td colspan="2" class="text-right text-uppercase">Total général FCFA</b-td>
                 <b-td class="text-right">{{new Intl.NumberFormat().format(Math.round(totalEtatCede))}}</b-td>
                 <b-td class="text-right">{{new Intl.NumberFormat().format(Math.round(totalEtatVerse))}}</b-td>
+                <b-td></b-td>
               </b-tr>
               <b-tr class="text-right font-weight-bold text-danger">
                 <b-td colspan="3" class="text-right text-uppercase">Reste à verser général</b-td>
                 <b-td class="text-right">{{new Intl.NumberFormat().format(Math.round(totalEtatResteCommercial))}}</b-td>
+                <b-td></b-td>
               </b-tr>
             </b-tfoot>
           </b-table-simple>
@@ -247,11 +262,12 @@
                 <b-th class="text-right">Montant TTC</b-th>
                 <b-th class="text-right">Encaissé</b-th>
                 <b-th class="text-right">Reste</b-th>
+                <b-th>BL saisi par</b-th>
               </b-tr>
             </b-thead>
             <b-tbody v-for="client in element" :key="client.id">
               <b-tr class="bg-light text-uppercase font-weight-bold">
-                <b-td colspan="6">{{client.nom}} {{client.prenoms}}</b-td>
+                <b-td colspan="7">{{client.nom}} {{client.prenoms}}</b-td>
               </b-tr>
               <b-tr v-for="f in client.factures" :key="f.code_facture" :class="{'text-white bg-danger': f.reste > 1500}">
                 <b-td>{{changerDate(f.date_facture)}}</b-td>
@@ -260,6 +276,7 @@
                 <b-td class="text-right">{{new Intl.NumberFormat().format(f.montant_ttc)}}</b-td>
                 <b-td class="text-right">{{new Intl.NumberFormat().format(f.encaisse)}}</b-td>
                 <b-td class="text-right">{{new Intl.NumberFormat().format(f.reste)}}</b-td>
+                <b-td>{{f.saisi_par || '—'}}</b-td>
               </b-tr>
               <b-tr class="font-weight-bold">
                 <b-td colspan="2" class="text-right text-uppercase">Sous-total</b-td>
@@ -267,6 +284,7 @@
                 <b-td class="text-right">{{new Intl.NumberFormat().format(Math.round(client.st_ttc))}}</b-td>
                 <b-td class="text-right">{{new Intl.NumberFormat().format(Math.round(client.st_encaisse))}}</b-td>
                 <b-td class="text-right">{{new Intl.NumberFormat().format(Math.round(client.st_reste))}}</b-td>
+                <b-td></b-td>
               </b-tr>
             </b-tbody>
             <b-tfoot>
@@ -276,6 +294,7 @@
                 <b-td class="text-right">{{new Intl.NumberFormat().format(Math.round(totalEtatTTC))}}</b-td>
                 <b-td class="text-right">{{new Intl.NumberFormat().format(Math.round(totalEtatEncaisse))}}</b-td>
                 <b-td class="text-right">{{new Intl.NumberFormat().format(Math.round(totalEtatResteClient))}}</b-td>
+                <b-td></b-td>
               </b-tr>
             </b-tfoot>
           </b-table-simple>
@@ -442,7 +461,9 @@ export default {
     }
   },
   created() {
-    this.clientFacture()
+    if (!this.estCaisse) {
+      this.clientFacture()
+    }
     this.fetchCommerciaux()
     // La caisse n'a que "Par commercial" comme filtre d'encaissement : on le
     // pré-sélectionne pour éviter un écran vide au premier chargement.

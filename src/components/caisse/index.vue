@@ -112,7 +112,7 @@
         <b-col md="6">
           <b-form-group label="Montant reçu (FCFA)" :description="'Reste à payer : ' + nf(cibleReste) + ' FCFA'">
             <b-input-group append="FCFA">
-              <b-form-input type="number" min="0" step="any" v-model="montant"></b-form-input>
+              <b-form-input type="number" min="0" v-entier v-model="montant"></b-form-input>
             </b-input-group>
           </b-form-group>
         </b-col>
@@ -138,7 +138,7 @@
       <b-form-group v-if="mode === 1" label="Monnaie à rendre (FCFA)"
                     description="Calculée automatiquement si le montant reçu dépasse le reste à payer ; modifiable si besoin.">
         <b-input-group append="FCFA">
-          <b-form-input type="number" min="0" step="any" v-model="monnaieRendue"></b-form-input>
+          <b-form-input type="number" min="0" v-entier v-model="monnaieRendue"></b-form-input>
         </b-input-group>
       </b-form-group>
 
@@ -195,6 +195,8 @@ export default {
         { key: 'montant_ttc', label: 'Total', class: 'text-right' },
         { key: 'verse', label: 'Versé', class: 'text-right' },
         { key: 'reste', label: 'Reste', class: 'text-right' },
+        { key: 'saisi_par', label: 'BL saisi par', formatter: (v) => v || '—' },
+        { key: 'dernier_encaissement_par', label: 'Dernier encaissement par', formatter: (v) => v || '—' },
         { key: 'actions', label: '' },
       ],
       champsCom: [

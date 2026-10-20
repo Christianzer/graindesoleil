@@ -36,17 +36,17 @@
       <div class="row">
         <div class="col-md-4">
           <b-form-group label="Prix Détail">
-            <b-form-input type="number" v-model="formData.prix_detail"></b-form-input>
+            <b-form-input type="number" v-entier v-model="formData.prix_detail"></b-form-input>
           </b-form-group>
         </div>
         <div class="col-md-4">
           <b-form-group label="Prix Demi-gros">
-            <b-form-input type="number" v-model="formData.prix_demi_gros"></b-form-input>
+            <b-form-input type="number" v-entier v-model="formData.prix_demi_gros"></b-form-input>
           </b-form-group>
         </div>
         <div class="col-md-4">
           <b-form-group label="Prix Gros">
-            <b-form-input type="number" v-model="formData.prix_gros"></b-form-input>
+            <b-form-input type="number" v-entier v-model="formData.prix_gros"></b-form-input>
           </b-form-group>
         </div>
       </div>

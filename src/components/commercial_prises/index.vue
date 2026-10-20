@@ -368,12 +368,14 @@ export default {
         { key: 'code_prise', label: 'Code' },
         { key: 'date_prise', label: 'Date', formatter: (v) => this.$dateFr(v) },
         { key: 'montant_total', label: 'Montant' },
+        { key: 'saisi_par', label: 'Saisi par', formatter: (v) => v || '—' },
         { key: 'actions', label: '' },
       ],
       fieldsVersements: [
         { key: 'date_versement', label: 'Date', formatter: (v) => this.$dateFr(v) },
         { key: 'mode_paiement', label: 'Mode' },
         { key: 'montant', label: 'Montant' },
+        { key: 'saisi_par', label: 'Saisi par', formatter: (v) => v || '—' },
         { key: 'actions', label: '' },
       ],
       fieldsLignes: [

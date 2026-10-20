@@ -7,6 +7,9 @@ import {
 
 /* ------------------------------------------------------------------ utils */
 
+// Ligne « Saisi par » ajoutée au bandeau quand le backend fournit l'auteur.
+const saisiPar = (d) => (d.saisi_par ? [`Saisi par : ${d.saisi_par}`] : [])
+
 function blocTiers (titre, tiers, droite) {
   return {
     columns: [
@@ -109,7 +112,7 @@ export function bl (d) {
   contenu.push(blocSignatures(['Livré par', 'Reçu par (nom + signature)']))
   return {
     titre: 'BON DE LIVRAISON',
-    meta: [`N° ${d.numero}`, dateLongue(d.date)],
+    meta: [`N° ${d.numero}`, dateLongue(d.date), ...saisiPar(d)],
     contenu,
     filename: `BL_${d.numero}.pdf`,
   }
@@ -151,7 +154,7 @@ export function recu (d) {
 
   return {
     titre: 'REÇU DE VERSEMENT',
-    meta: [`N° ${d.numero}`, dateLongue(d.date)],
+    meta: [`N° ${d.numero}`, dateLongue(d.date), ...saisiPar(d)],
     contenu,
     filename: `RECU_${d.numero}.pdf`,
   }
@@ -160,7 +163,7 @@ export function recu (d) {
 export function avoir (d) {
   return {
     titre: 'AVOIR',
-    meta: [`N° ${d.numero}`, `sur ${d.facture_origine || '—'}`, dateLongue(d.date)],
+    meta: [`N° ${d.numero}`, `sur ${d.facture_origine || '—'}`, dateLongue(d.date), ...saisiPar(d)],
     contenu: [
       blocTiers('Client', d.client),
       tableauLignes(
@@ -201,7 +204,7 @@ export const releveCommercial = (d) => releve(d, 'COMMERCIAL', 'COM')
 export function cession (d) {
   return {
     titre: 'BON DE CESSION — COMMERCIAL',
-    meta: [`N° ${d.numero}`, dateLongue(d.date)],
+    meta: [`N° ${d.numero}`, dateLongue(d.date), ...saisiPar(d)],
     contenu: [
       blocTiers(d.commercial.type === 'equipe' ? 'Équipe commerciale' : 'Commercial', d.commercial),
       { text: [{ text: 'Tarif : ', color: COULEURS.gris }, d.niveau_prix] },
@@ -228,8 +231,8 @@ export function cession (d) {
 }
 
 export function transfert (d) {
-  const meta = [`Demande N° ${d.numero}`]
-  meta.push(d.statut === 3 ? `Soldée le ${dateCourte(d.date_livraison)}` : (d.statut === 2 ? 'Livraison partielle' : 'En attente'))
+  const meta = [`Demande N° ${d.numero}`, ...saisiPar(d)]
+  meta.push(d.statut === 3 ? `Soldée le ${dateCourte(d.date_livraison)}` : (d.statut === 2 ? 'Livraison partielle' : (d.statut === 4 ? 'Annulée' : 'En attente')))
   return {
     titre: 'BON DE TRANSFERT — USINE → MAGASIN',
     meta,
@@ -259,8 +262,9 @@ export function clotureCaisse (d) {
         { text: 'Canal', key: 'canal' },
         { text: 'Mode', key: 'mode' },
         { text: 'Montant (FCFA)', key: 'm', align: 'right' },
+        { text: 'Saisi par', key: 'par' },
       ],
-      d.encaissements.map(e => ({ ref: e.reference, tiers: e.tiers, canal: e.canal, mode: e.mode, m: nombre(e.montant) })),
+      d.encaissements.map(e => ({ ref: e.reference, tiers: e.tiers, canal: e.canal, mode: e.mode, m: nombre(e.montant), par: e.saisi_par || '—' })),
     ),
   ]
   if (d.par_mode && d.par_mode.length) {
@@ -273,15 +277,15 @@ export function clotureCaisse (d) {
   if (d.entrees && d.entrees.length) {
     contenu.push(sousTitre('Autres entrées'))
     contenu.push(tableauLignes(
-      [{ text: 'Référence', key: 'ref' }, { text: 'Libellé', key: 'lib' }, { text: 'Montant (FCFA)', key: 'm', align: 'right' }],
-      d.entrees.map(x => ({ ref: x.reference, lib: x.libelle, m: nombre(x.montant) })),
+      [{ text: 'Référence', key: 'ref' }, { text: 'Libellé', key: 'lib' }, { text: 'Montant (FCFA)', key: 'm', align: 'right' }, { text: 'Saisi par', key: 'par' }],
+      d.entrees.map(x => ({ ref: x.reference, lib: x.libelle, m: nombre(x.montant), par: x.saisi_par || '—' })),
     ))
   }
   if (d.sorties && d.sorties.length) {
     contenu.push(sousTitre('Décaissements'))
     contenu.push(tableauLignes(
-      [{ text: 'Référence', key: 'ref' }, { text: 'Libellé', key: 'lib' }, { text: 'Montant (FCFA)', key: 'm', align: 'right' }],
-      d.sorties.map(x => ({ ref: x.reference, lib: x.libelle, m: nombre(x.montant) })),
+      [{ text: 'Référence', key: 'ref' }, { text: 'Libellé', key: 'lib' }, { text: 'Montant (FCFA)', key: 'm', align: 'right' }, { text: 'Saisi par', key: 'par' }],
+      d.sorties.map(x => ({ ref: x.reference, lib: x.libelle, m: nombre(x.montant), par: x.saisi_par || '—' })),
     ))
   }
   contenu.push(recap([
@@ -405,5 +409,172 @@ export function dashboardUsine (d) {
     meta: [`Édité le ${dateLongue(d.date)}`],
     contenu,
     filename: `TABLEAU_DE_BORD_USINE_${d.date}.pdf`,
+  }
+}
+
+/**
+ * Récapitulatif de clôture mensuelle. d = ligne `clotures` du backend :
+ * { date_debut, date_fin, anticipee, cloture_par, recap: {...figé à la clôture} }.
+ * Les sections ajoutées après coup (liste_bl, journal…) peuvent manquer sur d'anciens
+ * récapitulatifs : chaque tableau est simplement omis dans ce cas.
+ */
+export function cloture (d) {
+  const r = d.recap
+  const contenu = []
+  const num = (v) => nombre(v)
+  const droite = (text, key, width) => ({ text, key, align: 'right', width })
+
+  // Titre + tableau, omis quand il n'y a aucune ligne.
+  const tab = (titre, colonnes, lignes, tousAffichages) => {
+    if (!lignes || !lignes.length) {
+      if (tousAffichages) {
+        contenu.push(sousTitre(titre))
+        contenu.push({ text: 'Aucune donnée sur la période.', color: COULEURS.gris, fontSize: 9, margin: [0, 2, 0, 6] })
+      }
+      return
+    }
+    contenu.push(sousTitre(titre))
+    contenu.push(tableauLignes(colonnes, lignes))
+  }
+
+  /* ------------------------------------------------------------- Ventes */
+  contenu.push(sousTitre('Ventes'))
+  contenu.push(blocInfos([
+    ['Bons de livraison', `${r.ventes.nb_bl} — ${fcfa(r.ventes.total_ttc)}`],
+    ['Avoirs', `${r.ventes.nb_avoirs} — ${fcfa(r.ventes.total_avoirs)}`],
+    ['Ventes nettes TTC', fcfa(r.ventes.net_ttc)],
+  ]))
+  if (r.ventes.par_produit.length) {
+    contenu.push(tableauLignes(
+      [{ text: 'Produit', key: 'p' }, droite('Quantité', 'q'), droite('Montant (FCFA)', 'm')],
+      r.ventes.par_produit.map(x => ({ p: x.libelle, q: kg(x.quantite), m: num(x.montant) })),
+    ))
+  }
+  tab('Ventes par niveau de prix',
+    [{ text: 'Niveau', key: 'n' }, droite('BL', 'b'), droite('Quantité', 'q'), droite('Montant (FCFA)', 'm')],
+    (r.ventes.par_niveau_prix || []).map(x => ({ n: x.niveau, b: x.nb_bl, q: kg(x.quantite), m: num(x.montant) })))
+  tab('Ventes par utilisateur (saisi par)',
+    [{ text: 'Utilisateur', key: 'u' }, droite('BL', 'b'), droite('Montant net (FCFA)', 'm')],
+    (r.ventes.par_utilisateur || []).map(x => ({ u: x.utilisateur, b: x.nb_bl, m: num(x.montant) })))
+  tab('Ventes par client',
+    [{ text: 'Client', key: 'c' }, droite('BL', 'b'), droite('Montant net', 'm'), droite('Versé', 'v'), droite('Reste dû', 'r')],
+    (r.ventes.par_client || []).map(x => ({ c: x.client, b: x.nb_bl, m: num(x.montant), v: num(x.verse), r: num(x.reste) })))
+  tab('Liste des bons de livraison et avoirs',
+    [{ text: 'N°', key: 'n' }, { text: 'Date', key: 'd' }, { text: 'Client', key: 'c' }, droite('Montant', 'm'), droite('Versé', 'v'), droite('Reste', 'r'), { text: 'Par', key: 'p' }],
+    (r.ventes.liste_bl || []).map(x => ({ n: x.numero, d: dateCourte(x.date), c: x.client, m: num(x.montant), v: num(x.verse), r: num(x.reste), p: x.saisi_par })))
+
+  /* ------------------------------------------------- Encaissements & caisse */
+  contenu.push(sousTitre('Encaissements et caisse'))
+  contenu.push(tableauLignes(
+    [{ text: 'Mode de paiement', key: 'mode' }, droite('Montant (FCFA)', 'm')],
+    r.encaissement.par_mode.map(x => ({ mode: x.mode, m: num(x.montant) })),
+  ))
+  contenu.push(recap([
+    ['Encaissé auprès des clients', r.encaissement.clients.total],
+    ['Versé par les commerciaux', r.encaissement.commerciaux.total],
+    ['Autres entrées de caisse', r.caisse.entrees.total],
+    ['Décaissements validés', r.caisse.sorties.total],
+    ['Solde de caisse en début de période', r.caisse.solde_debut],
+    ['Solde de caisse en fin de période', r.caisse.solde_fin, true],
+  ]))
+  tab('Caisse — totaux par utilisateur',
+    [{ text: 'Utilisateur', key: 'u' }, droite('Encaissé', 'e'), droite('Entrées', 'n'), droite('Sorties validées', 's')],
+    (r.caisse.par_utilisateur || []).map(x => ({ u: x.utilisateur, e: num(x.encaisse), n: num(x.entrees), s: num(x.sorties) })))
+  tab('Journal de caisse jour par jour',
+    [{ text: 'Jour', key: 'd' }, droite('Encaissé', 'e'), droite('Entrées', 'n'), droite('Sorties', 's'), droite('Solde fin de journée', 'x')],
+    (r.caisse.journal || []).map(x => ({ d: dateCourte(x.date), e: x.encaisse ? num(x.encaisse) : '—', n: x.entrees ? num(x.entrees) : '—', s: x.sorties ? num(x.sorties) : '—', x: num(x.solde) })))
+  tab('Liste des encaissements',
+    [{ text: 'Reçu', key: 'r' }, { text: 'Date', key: 'd' }, { text: 'Client / commercial', key: 't' }, { text: 'BL', key: 'b' }, { text: 'Mode', key: 'o' }, droite('Montant', 'm'), { text: 'Par', key: 'p' }],
+    (r.encaissement.liste || []).map(x => ({ r: x.recu, d: dateCourte(x.date), t: x.tiers, b: x.piece || '—', o: x.mode, m: num(x.montant), p: x.saisi_par })))
+  tab('Entrées et sorties de caisse',
+    [{ text: 'Date', key: 'd' }, { text: 'Sens', key: 's' }, { text: 'Référence', key: 'r' }, { text: 'Libellé', key: 'l' }, droite('Montant', 'm'), { text: 'Statut', key: 't' }, { text: 'Par', key: 'p' }],
+    (r.caisse.mouvements || []).map(x => ({ d: dateCourte(x.date), s: x.sens, r: x.reference, l: x.libelle, m: num(x.montant), t: x.statut, p: x.saisi_par })))
+
+  /* ------------------------------------------------------------- Créances */
+  contenu.push(sousTitre('Créances à la fin de la période'))
+  contenu.push(recap([
+    [`Clients (${r.creances.clients.nb})`, r.creances.clients.total],
+    [`Commerciaux (${r.creances.commerciaux.nb})`, r.creances.commerciaux.total],
+  ]))
+  tab('Clients débiteurs', [{ text: 'Client', key: 'n' }, droite('Solde (FCFA)', 's')],
+    r.creances.clients.liste.map(x => ({ n: x.nom, s: num(x.solde) })))
+  tab('Commerciaux débiteurs', [{ text: 'Commercial', key: 'n' }, droite('Solde (FCFA)', 's')],
+    r.creances.commerciaux.liste.map(x => ({ n: x.nom, s: num(x.solde) })))
+  if (r.creances.anciennete) {
+    tab('Ancienneté des créances clients',
+      [{ text: 'Ancienneté', key: 't' }, droite('BL', 'b'), droite('Reste dû (FCFA)', 'm')],
+      r.creances.anciennete.tranches.map(x => ({ t: x.tranche, b: x.nb, m: num(x.montant) })))
+    tab('BL impayés',
+      [{ text: 'BL', key: 'n' }, { text: 'Date', key: 'd' }, { text: 'Client', key: 'c' }, droite('Jours', 'j'), droite('Reste dû', 'r'), { text: 'Par', key: 'p' }],
+      (r.creances.anciennete.liste || []).map(x => ({ n: x.numero, d: dateCourte(x.date), c: x.client, j: x.age_jours, r: num(x.reste), p: x.saisi_par })))
+  }
+  tab('Dépôt-vente par commercial',
+    [{ text: 'Commercial', key: 'c' }, droite('Solde début', 'a'), droite('Cédé (kg)', 'k'), droite('Cédé', 'm'), droite('Vendu (kg)', 'v'), droite('Retours (kg)', 'r'), droite('Versé', 'e'), droite('Solde fin', 'f')],
+    (r.creances.depot_vente || []).map(x => ({ c: x.commercial, a: num(x.solde_debut), k: kg(x.cede_kg), m: num(x.cede_montant), v: kg(x.vendu_kg), r: kg(x.retour_kg), e: num(x.verse), f: num(x.solde_fin) })))
+
+  /* --------------------------------------------------------------- Achats */
+  contenu.push(sousTitre('Achats fournisseurs'))
+  contenu.push(recap([
+    [`Approvisionnements (${r.achats.nb})`, r.achats.total],
+    ['Réglé aux fournisseurs', r.achats.regle],
+    ['Dette fournisseurs en fin de période', r.achats.dette_fin, true],
+  ]))
+  tab('Achats par fournisseur',
+    [{ text: 'Fournisseur', key: 'n' }, droite('Achats', 'b'), droite('Montant (FCFA)', 'm')],
+    r.achats.par_fournisseur.map(x => ({ n: x.nom, b: x.nb, m: num(x.montant) })))
+  tab('Dettes par fournisseur',
+    [{ text: 'Fournisseur', key: 'n' }, droite('Acheté (cumul)', 'a'), droite('Réglé (cumul)', 'r'), droite('Dette', 'd')],
+    (r.achats.dettes || []).map(x => ({ n: x.nom, a: num(x.achete), r: num(x.regle), d: num(x.dette) })))
+  tab('Détail des approvisionnements',
+    [{ text: 'Appro', key: 'c' }, { text: 'Date', key: 'd' }, { text: 'Fournisseur', key: 'f' }, { text: 'Produits', key: 'l' }, droite('Montant', 'm'), droite('Reste', 'r'), { text: 'Par', key: 'p' }],
+    (r.achats.detail || []).map(x => ({
+      c: x.code, d: dateCourte(x.date), f: x.fournisseur,
+      l: x.lignes.map(l => `${l.produit} ${kg(l.quantite)} kg × ${num(l.prix)}`).join(' ; '),
+      m: num(x.montant), r: num(x.reste), p: x.saisi_par,
+    })))
+
+  /* ---------------------------------------------------------------- Stock */
+  tab('Mouvements de stock de la période (kg)',
+    [{ text: 'Produit', key: 'p' }, droite('Entrées', 'e'), droite('Sorties', 's'), droite('Variation', 'n')],
+    r.stock.mouvements.map(x => ({ p: x.libelle, e: kg(x.entrees), s: kg(x.sorties), n: kg(x.net) })), true)
+  tab('Mouvements par produit et par type (kg)',
+    [{ text: 'Produit', key: 'p' }, { text: 'Type', key: 't' }, droite('Nb', 'b'), droite('Entrées', 'e'), droite('Sorties', 's'), droite('Variation', 'n')],
+    (r.stock.mouvements_par_type || []).map(x => ({ p: x.libelle, t: x.type, b: x.nb, e: kg(x.entrees), s: kg(x.sorties), n: kg(x.net) })))
+  tab('Stock constaté à la clôture (information)',
+    [{ text: 'Produit', key: 'p' }, droite('Stock (kg)', 'q'), droite('Emballé (kg)', 'e')],
+    r.stock.stock_a_la_cloture.map(x => ({ p: x.libelle, q: kg(x.quantite), e: kg(x.emballe) })))
+  if (r.stock.valorisation) {
+    tab('Valorisation du stock (quantité × prix de vente)',
+      [{ text: 'Produit', key: 'p' }, droite('Stock (kg)', 'q'), droite('Valeur détail', 'd'), droite('Valeur gros', 'g')],
+      r.stock.valorisation.lignes.map(x => ({ p: x.libelle, q: kg(x.quantite), d: num(x.valeur_detail), g: num(x.valeur_gros) })))
+    contenu.push(recap([
+      ['Total au prix détail', r.stock.valorisation.total_detail],
+      ['Total au prix gros', r.stock.valorisation.total_gros],
+    ]))
+  }
+
+  /* ------------------------------------------------------ Usine & demandes */
+  if (r.production) {
+    tab(`Production de l'usine (${r.production.nb_transformations} transformation(s))`,
+      [{ text: 'Étape', key: 'e' }, droite('Nb', 'n'), droite('Entrée (kg)', 'i'), droite('Obtenu (kg)', 'o'), droite('Perte (kg)', 'p'), droite('Perte %', 'x')],
+      r.production.par_etape.map(x => ({ e: x.etape, n: x.nb, i: kg(x.entree), o: kg(x.sortie), p: kg(x.perte), x: `${kg(x.perte_pct)} %` })))
+    tab('Lots de la période',
+      [{ text: 'Lot', key: 'c' }, { text: 'Produit', key: 'p' }, { text: 'Statut', key: 's' }, { text: 'Début', key: 'd' }, droite('Entrée', 'i'), droite('Obtenu', 'o'), droite('Perte %', 'x')],
+      (r.production.lots || []).map(x => ({ c: x.code, p: x.produit, s: x.statut, d: dateCourte(x.debut), i: kg(x.entree), o: kg(x.sortie), x: `${kg(x.perte_pct)} %` })))
+  }
+  if (r.demandes) {
+    tab(`Demandes de stock usine → magasin (${r.demandes.nb})`,
+      [{ text: 'Demande', key: 'c' }, { text: 'Date', key: 'd' }, { text: 'Statut', key: 's' }, droite('Demandé (kg)', 'q'), droite('Livré (kg)', 'l'), { text: 'Par', key: 'p' }],
+      r.demandes.liste.map(x => ({ c: x.code, d: dateCourte(x.date), s: x.statut, q: kg(x.demande), l: kg(x.livre), p: x.saisi_par })))
+  }
+
+  return {
+    titre: 'CLÔTURE MENSUELLE',
+    meta: [
+      `Du ${dateCourte(d.date_debut)} au ${dateCourte(d.date_fin)}${d.anticipee ? ' (anticipée)' : ''}`,
+      d.cloture_par ? `Clôturée par : ${d.cloture_par}` : '',
+    ].filter(Boolean),
+    contenu,
+    filename: `CLOTURE_${d.date_debut}_${d.date_fin}.pdf`,
   }
 }

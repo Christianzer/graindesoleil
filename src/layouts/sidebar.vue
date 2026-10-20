@@ -223,12 +223,19 @@
       </li>
 
       <!-- Section : Administration -->
-      <div class="obf-nav-section" v-if="canAny(['commercial','parametres'])">Administration</div>
+      <div class="obf-nav-section" v-if="canAny(['commercial','parametres','clotures'])">Administration</div>
 
       <li class="nav-item" v-if="hasPermission('commercial')">
         <router-link class="nav-link" :to="{name : 'commercial'}">
           <i class="fas fa-fw fa-users-cog"></i>
           <span class="text-uppercase">Comptes utilisateurs</span>
+        </router-link>
+      </li>
+
+      <li class="nav-item" v-if="hasPermission('clotures')">
+        <router-link class="nav-link" :to="{name : 'clotures'}">
+          <i class="fas fa-fw fa-lock"></i>
+          <span class="text-uppercase">Clôtures mensuelles</span>
         </router-link>
       </li>
 

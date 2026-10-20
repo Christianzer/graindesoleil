@@ -25,7 +25,7 @@ yarn build
 yarn tauri:build
 ```
 
-En dev, le backend Laravel n'est PAS géré par Tauri : lancez-le vous-même (`php -S 127.0.0.1:8000 -t . index.php` depuis `gstockgrainsmoulus/`, ou Apache/Laragon) — le proxy webpack (`vue.config.js`) pointe dessus. En production, l'app se connecte au backend hébergé en ligne (`https://api.grainsmoulus.succesemaster.com`, voir `src/api/config.js`) — plus de sidecar PHP embarqué (voir plus bas).
+En dev, le backend Laravel n'est PAS géré par Tauri : lancez-le vous-même (`php -S 127.0.0.1:8000 -t . index.php` depuis `gstockgrainsmoulus/`, ou Apache/Laragon) — le proxy webpack (`vue.config.js`) pointe dessus. En production, l'app se connecte au backend hébergé en ligne (`https://api.cafefortuna.net`, voir `src/api/config.js`) — plus de sidecar PHP embarqué (voir plus bas).
 
 ## Architecture
 

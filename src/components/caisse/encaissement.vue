@@ -32,7 +32,7 @@
               class="text-uppercase font-weight-bold text-danger"
               label="Versement"
           >
-            <b-form-input type="number" min="2000" class="text-uppercase font-weight-bold" required v-model="formData.versement"></b-form-input>
+            <b-form-input type="number" min="2000" class="text-uppercase font-weight-bold" required v-entier v-model="formData.versement"></b-form-input>
           </b-form-group>
         </div>
         <div class="col-md-4">
@@ -79,7 +79,7 @@
               class="text-uppercase font-weight-bold text-danger"
               label="Montant"
           >
-            <b-form-input type="number" class="text-uppercase font-weight-bold" min="2000" required v-model="formData.versement"></b-form-input>
+            <b-form-input type="number" class="text-uppercase font-weight-bold" min="2000" required v-entier v-model="formData.versement"></b-form-input>
           </b-form-group>
         </div>
         <div class="col-md-4">
@@ -126,7 +126,7 @@
               class="text-uppercase font-weight-bold text-danger"
               label="Montant"
           >
-            <b-form-input type="number" class="text-uppercase font-weight-bold" required  min="2000" v-model="formData.versement"></b-form-input>
+            <b-form-input type="number" class="text-uppercase font-weight-bold" required  min="2000" v-entier v-model="formData.versement"></b-form-input>
           </b-form-group>
         </div>
         <div class="col-md-4">
@@ -173,7 +173,7 @@
               class="text-uppercase font-weight-bold text-danger"
               label="Montant"
           >
-            <b-form-input type="number" class="text-uppercase font-weight-bold" min="2000" required v-model="formData.versement"></b-form-input>
+            <b-form-input type="number" class="text-uppercase font-weight-bold" min="2000" required v-entier v-model="formData.versement"></b-form-input>
           </b-form-group>
         </div>
         <div class="col-md-4">

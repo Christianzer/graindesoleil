@@ -20,6 +20,7 @@ const REGISTRE = {
   cession: { url: (code) => `/api/doc/cession/${code}`, build: B.cession },
   transfert: { url: (code) => `/api/doc/transfert/${code}`, build: B.transfert },
   cloture_caisse: { url: (date) => `/api/doc/cloture-caisse/${date || ''}`, build: B.clotureCaisse },
+  cloture: { url: (id) => `/api/clotures/${id}`, build: B.cloture },
 }
 
 /**

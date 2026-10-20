@@ -39,11 +39,19 @@
     <template v-else>
       <div class="row">
         <div class="col-xl col-md-6 mb-4">
-          <StatCard label="Encaissé" :value="fmt(kpis.encaisse)" icon="fas fa-check-circle" variant="accent" />
+          <div class="obf-clickable" @click="$refs.detailEncaisse.ouvrir()">
+            <StatCard label="Encaissé" :value="fmt(kpis.encaisse)" sub="Cliquer : détail par produit" icon="fas fa-check-circle" variant="accent" />
+          </div>
+          <DetailProduitsModal ref="detailEncaisse" title="Encaissé — produits des BL encaissés"
+                               url="/api/dashboard/detail/encaisse" :params="{ debut: dateDebut, fin: dateFin }" :note="noteEncaisse" />
         </div>
         <div class="col-xl col-md-6 mb-4">
-          <StatCard label="Reste à encaisser" :value="fmt(ventesARealiserTtc)"
-                    sub="Solde impayé de tous les BL (TTC)" icon="fas fa-hourglass-half" variant="primary" />
+          <div class="obf-clickable" @click="$refs.detailReste.ouvrir()">
+            <StatCard label="Reste à encaisser" :value="fmt(ventesARealiserTtc)"
+                      sub="Solde impayé de tous les BL (TTC) — cliquer pour le détail" icon="fas fa-hourglass-half" variant="primary" />
+          </div>
+          <DetailProduitsModal ref="detailReste" title="Reste à encaisser — produits des BL impayés"
+                               url="/api/dashboard/detail/reste" note="Tous les bons de livraison non soldés, quelle que soit leur date." />
         </div>
         <div class="col-xl col-md-6 mb-4">
           <StatCard label="Décaissement" :value="fmt(kpis.decaissement)" icon="fas fa-arrow-down" variant="danger" />
@@ -54,6 +62,15 @@
         <div class="col-xl col-md-6 mb-4">
           <StatCard label="Reste à verser (commerciaux)" :value="fmt(kpis.reste_a_verser_commerciaux)"
                     icon="fas fa-people-carry" variant="primary" />
+        </div>
+        <div class="col-xl col-md-6 mb-4">
+          <div class="obf-clickable" @click="$refs.detailVerse.ouvrir()">
+            <StatCard label="Versé par les commerciaux" :value="fmt(kpis.verse_commerciaux)"
+                      sub="Cliquer : détail par produit" icon="fas fa-hand-holding-usd" variant="accent" />
+          </div>
+          <DetailProduitsModal ref="detailVerse" title="Versé par les commerciaux — produits concernés"
+                               url="/api/dashboard/detail/verse-commerciaux" :params="{ debut: dateDebut, fin: dateFin }"
+                               :avec-depot="true" :note="'Versements reçus du ' + dateDebut + ' au ' + dateFin + ', répartis sur les produits cédés au commercial.'" />
         </div>
       </div>
 
@@ -174,6 +191,7 @@
 import API_BASE_URL from '@/api/config.js'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import StatCard from '@/components/ui/StatCard.vue'
+import DetailProduitsModal from '@/components/ui/DetailProduitsModal.vue'
 import moment from 'moment'
 import { genererDocument } from '@/documents'
 import { dashboardResponsable } from '@/documents/builders'
@@ -200,13 +218,13 @@ const COULEURS_ETAPES = ['#94A3B8', '#D97706', '#7C3AED', '#16A34A']
 
 export default {
   name: 'responsable-dashboard',
-  components: { PageHeader, StatCard, LineChart: Line, BarChart: Bar },
+  components: { PageHeader, StatCard, DetailProduitsModal, LineChart: Line, BarChart: Bar },
   data() {
     return {
       loaded: false,
       dateDebut: moment().subtract(29, 'days').format('YYYY-MM-DD'),
       dateFin: moment().format('YYYY-MM-DD'),
-      kpis: { encaisse: 0, decaissement: 0, autres_entrees: 0, reste_a_verser_commerciaux: 0 },
+      kpis: { encaisse: 0, encaisse_clients: 0, verse_commerciaux: 0, decaissement: 0, autres_entrees: 0, reste_a_verser_commerciaux: 0 },
       caParJour: [],
       tresorerieParJour: [],
       topProduits: [],
@@ -230,6 +248,12 @@ export default {
     }
   },
   computed: {
+    // Le chiffre « Encaissé » additionne clients et commerciaux ; le détail par produit ne couvre
+    // que les BL clients, d'où cette précision pour que le total de la fenêtre se lise correctement.
+    noteEncaisse() {
+      return `Période du ${this.dateDebut} au ${this.dateFin}. Bons de livraison clients uniquement : `
+        + `les versements des commerciaux (${this.fmt(this.kpis.verse_commerciaux)}) sont dans la carte « Versé par les commerciaux ».`
+    },
     caChartData() {
       return {
         labels: this.caParJour.map(l => this.formatJour(l.date)),
@@ -409,4 +433,5 @@ export default {
 </script>
 
 <style scoped>
+.obf-clickable { cursor: pointer; }
 </style>

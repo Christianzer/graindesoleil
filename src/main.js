@@ -30,6 +30,10 @@ if (localStorage.getItem('LoggedUser')) {
 }
 
 Vue.use(BootstrapVue)
+
+// Champs de montants (FCFA) : entiers uniquement — voir src/utils/entier.js
+import entier from '@/utils/entier'
+Vue.directive('entier', entier)
 Vue.prototype.$http = axios
 
 // Format d'affichage des dates : JJ/MM/AAAA (ex. 09/09/2026), partout dans
@@ -69,7 +73,20 @@ Vue.config.productionTip = false
 let Fire = new Vue()
 window.Fire = Fire;
 
-new Vue({
+const app = new Vue({
   router,
   render: h => h(App),
 }).$mount('#app')
+
+// Période clôturée : le serveur refuse (423) toute écriture sur une pièce verrouillée.
+// Message clair pour l'utilisateur, quel que soit l'écran qui a envoyé la requête.
+axios.interceptors.response.use(
+  response => response,
+  error => {
+    const r = error && error.response
+    if (r && r.status === 423 && r.data && r.data.periode_cloturee) {
+      app.$bvToast.toast(r.data.message, { title: 'Période clôturée', variant: 'warning', solid: true, autoHideDelay: 8000 })
+    }
+    return Promise.reject(error)
+  }
+)

@@ -55,7 +55,7 @@
     <b-row>
       <b-col md="6">
         <b-form-group label="Montant effectivement versé (FCFA)" description="Obligatoire — peut être inférieur au total déclaré (paiement partiel), mais pas nul.">
-          <b-form-input type="number" min="0" v-model="montantVerse"
+          <b-form-input type="number" min="0" v-entier v-model="montantVerse"
                         :state="montantVerse !== null && montantVerse !== '' && Number(montantVerse) <= 0 ? false : null"></b-form-input>
           <small v-if="montantVerse !== null && montantVerse !== '' && Number(montantVerse) <= 0" class="text-danger">
             Le montant versé est obligatoire pour enregistrer l'encaissement.

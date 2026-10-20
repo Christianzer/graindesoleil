@@ -12,6 +12,12 @@
           <div class="obf-update__text">Une mise à jour de l'application est prête à être téléchargée.</div>
         </template>
 
+        <!-- Mise à jour de la PWA (navigateur) -->
+        <template v-if="state === 'pwa'">
+          <div class="obf-update__title">Nouvelle version disponible</div>
+          <div class="obf-update__text">Actualisez pour utiliser la dernière version de l'application.</div>
+        </template>
+
         <!-- Téléchargement en cours -->
         <template v-else-if="state === 'downloading'">
           <div class="obf-update__title">Téléchargement de la mise à jour… {{ percent }}%</div>
@@ -34,6 +40,11 @@
       </div>
 
       <div class="obf-update__actions">
+        <b-button
+          v-if="state === 'pwa'"
+          size="sm" variant="light" @click="actualiserPwa">
+          <i class="fas fa-redo mr-1"></i> Actualiser
+        </b-button>
         <b-button
           v-if="state === 'available'"
           size="sm" variant="light" @click="telecharger">
@@ -78,6 +89,10 @@ export default {
     },
   },
   async mounted() {
+    // PWA navigateur : un nouveau service worker attend d'être activé.
+    window.addEventListener('pwa-update', this.afficherMajPwa)
+    if (window.__pwaUpdate) this.afficherMajPwa()
+
     // Disponible uniquement dans l'app Tauri (pas en navigateur web)
     try {
       const { check } = await import('@tauri-apps/plugin-updater')
@@ -93,7 +108,21 @@ export default {
       console.log('Vérification de mise à jour ignorée :', e)
     }
   },
+  beforeDestroy() {
+    window.removeEventListener('pwa-update', this.afficherMajPwa)
+  },
   methods: {
+    afficherMajPwa() {
+      this.state = 'pwa'
+      this.visible = true
+    },
+    actualiserPwa() {
+      const reg = window.__pwaUpdate
+      const attente = reg && reg.waiting
+      if (!attente) { window.location.reload(); return }
+      navigator.serviceWorker.addEventListener('controllerchange', () => window.location.reload(), { once: true })
+      attente.postMessage({ type: 'SKIP_WAITING' })
+    },
     async telecharger() {
       if (!this.update) return
       this.state = 'downloading'

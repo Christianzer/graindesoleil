@@ -8,7 +8,7 @@ const ADMIN_PERMISSIONS = [
   'caisses', 'historiques_factures', 'historiques_livraisons', 'recu', 'rapport_caisse',
   'documents_clients', 'ventes_historiques', 'commande_clients', 'appro', 'decaissement',
   'historiques_encaissement', 'historiques_encaissement_clients', 'commercial', 'commerciaux',
-  'journal_activite', 'parametres',
+  'journal_activite', 'parametres', 'clotures',
   'demandes', 'demandes_creer', 'commercial_prises', 'commercial_prises_creer',
   'valider_depassement_seuil', 'valider_decaissement', 'supprimer_documents',
   'encaissement_bl_clients', 'compte_client', 'compte_commercial',

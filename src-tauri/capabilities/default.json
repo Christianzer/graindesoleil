@@ -9,6 +9,7 @@
     "core:default",
     "updater:default",
     "process:allow-restart",
+    "dialog:allow-save",
     {
       "identifier": "fs:allow-mkdir",
       "allow": [
