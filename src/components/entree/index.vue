@@ -54,6 +54,15 @@
               >
                 modifier
               </b-button>
+              <b-button
+                  v-if="peutSupprimer"
+                  size="sm"
+                  variant="outline-danger"
+                  title="Supprimer"
+                  @click="supprimer(row.item)"
+              >
+                <i class="fas fa-trash"></i>
+              </b-button>
             </template>
             <template v-slot:custom-foot="data">
               <b-tr>
@@ -160,6 +169,16 @@ export default {
     Facture,
     PageHeader
   },
+  computed: {
+    // Suppression réservée à l'admin et au responsable (aussi refusée par le serveur sinon).
+    peutSupprimer() {
+      try {
+        return [1, 3].includes(Number(JSON.parse(localStorage.getItem('LoggedUser')).type_user))
+      } catch (e) {
+        return false
+      }
+    }
+  },
   created() {
     this.fetchclients()
     //localStorage.removeItem('matricule')
@@ -181,6 +200,18 @@ export default {
       this.$refs.modalFacture.selectedTA = dataPat
       this.$refs.modalFacture.editMode = true
       this.$refs.modalFacture.showModalFacture()
+    },
+
+    async supprimer(item) {
+      const montant = new Intl.NumberFormat().format(item.montant_entre_caisse)
+      if (!window.confirm(`Supprimer l'entrée ${item.code_entre} de ${montant} FCFA ? Cette action est définitive.`)) return
+      await axios.delete(`${API_BASE_URL}/api/entre/${item.code_entre}`).then(() => {
+        this.$bvToast.toast('Entrée supprimée.', { title: 'Suppression', variant: 'success', solid: true })
+        this.fetchclients()
+      }).catch((err) => {
+        const message = err.response && err.response.data && err.response.data.message
+        this.$bvToast.toast(message || 'Erreur lors de la suppression.', { title: 'Suppression', variant: 'danger', solid: true })
+      })
     },
 
     async dowloadFile(id){

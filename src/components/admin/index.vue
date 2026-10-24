@@ -37,7 +37,7 @@
         </div>
         <div class="col-xl-3 col-md-6 mb-4">
           <StatCard label="Approvisionnement (kg)" :value="nf(appro) + ' kg'"
-                    sub="Stock demandé à l'usine et livré"
+                    sub="Livré par l'usine + ajouts manuels"
                     icon="fas fa-truck-loading" variant="warning" />
         </div>
         <div class="col-xl-3 col-md-6 mb-4">
