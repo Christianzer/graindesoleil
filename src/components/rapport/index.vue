@@ -483,7 +483,7 @@ export default {
     estCaisse() {
       try {
         const user = JSON.parse(localStorage.getItem('LoggedUser') || '{}')
-        return user.type_user === 5
+        return [4, 5].includes(user.type_user) // Caisse, ou Usine en consultation : pas de données clients
       } catch (e) {
         return false
       }

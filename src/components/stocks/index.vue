@@ -72,6 +72,26 @@
               </b-button>
 
               <b-button
+                  v-if="estResponsable"
+                  size="sm"
+                  variant="outline-success"
+                  class="mr-1"
+                  @click="ouvrirAjout(row.item)"
+              >
+                ajouter du stock
+              </b-button>
+
+              <b-button
+                  v-if="estResponsable"
+                  size="sm"
+                  variant="outline-secondary"
+                  class="mr-1"
+                  @click="ouvrirHistorique(row.item)"
+              >
+                historique
+              </b-button>
+
+              <b-button
                   size="sm"
                   variant="outline-danger"
                   class="mr-1"
@@ -109,6 +129,32 @@
         </b-button>
       </template>
     </b-modal>
+
+    <b-modal ref="modalAjout" title="Ajout de stock" hide-footer>
+      <template v-if="produitAAjuster">
+        <p class="mb-1"><strong>{{ produitAAjuster.libelle_produit }}</strong> ({{ produitAAjuster.code_produit }})</p>
+        <p class="text-muted small mb-3">Stock actuel : {{ new Intl.NumberFormat().format(produitAAjuster.quantite_produit) }} kg</p>
+        <b-form-group label="Quantité à ajouter (kg)">
+          <b-form-input type="number" min="0" step="0.01" v-model="quantiteAjout"></b-form-input>
+        </b-form-group>
+        <b-form-group label="N° de bon (obligatoire)">
+          <b-form-input v-model="numeroBonAjout" maxlength="60" placeholder="Ex : BE-0042"></b-form-input>
+        </b-form-group>
+        <b-form-group label="Note (facultatif)">
+          <b-form-textarea v-model="noteAjout" rows="2"></b-form-textarea>
+        </b-form-group>
+        <b-button variant="success" block :disabled="loadingReajustement || !numeroBonAjout.trim() || !(Number(quantiteAjout) > 0)" @click="confirmerAjout">
+          Ajouter au stock
+        </b-button>
+      </template>
+    </b-modal>
+
+    <b-modal ref="modalHistorique" title="Historique des ajouts de stock" size="lg" hide-footer>
+      <p v-if="produitAAjuster" class="mb-2"><strong>{{ produitAAjuster.libelle_produit }}</strong> ({{ produitAAjuster.code_produit }})</p>
+      <b-table small bordered responsive :items="historique" :fields="champsHistorique" show-empty empty-text="Aucun ajout ni réajustement.">
+        <template v-slot:cell(type)="row">{{ row.item.type === 'ajout_manuel' ? 'Ajout' : 'Réajustement' }}</template>
+      </b-table>
+    </b-modal>
   </div>
 </template>
 
@@ -133,6 +179,17 @@ export default {
       nouvelleQuantiteReajustement: 0,
       motifReajustement: '',
       loadingReajustement: false,
+      quantiteAjout: '',
+      numeroBonAjout: '',
+      noteAjout: '',
+      historique: [],
+      champsHistorique: [
+        { key: 'date_mouvement', label: 'Date' },
+        { key: 'type', label: 'Type' },
+        { key: 'quantite', label: 'Qté (kg)' },
+        { key: 'reference', label: 'N° bon' },
+        { key: 'observation', label: 'Détail' },
+      ],
       fields : [
         {
           key:'code_produit',
@@ -235,6 +292,35 @@ export default {
       this.nouvelleQuantiteReajustement = produit.quantite_produit
       this.motifReajustement = ''
       this.$refs.modalReajustement.show()
+    },
+    ouvrirAjout(produit) {
+      this.produitAAjuster = produit
+      this.quantiteAjout = ''
+      this.numeroBonAjout = ''
+      this.noteAjout = ''
+      this.$refs.modalAjout.show()
+    },
+    async confirmerAjout() {
+      this.loadingReajustement = true
+      await axios.post(`${API_BASE_URL}/api/produits/${this.produitAAjuster.code_produit}/ajouter-stock`, {
+        quantite: this.quantiteAjout,
+        numero_bon: this.numeroBonAjout,
+        note: this.noteAjout
+      }).then(() => {
+        this.$refs.modalAjout.hide()
+        this.fetchdata()
+      }).catch((err) => {
+        alert(err.response && err.response.data && err.response.data.message ? err.response.data.message : "Erreur lors de l'ajout de stock.")
+      })
+      this.loadingReajustement = false
+    },
+    async ouvrirHistorique(produit) {
+      this.produitAAjuster = produit
+      this.historique = []
+      this.$refs.modalHistorique.show()
+      await axios.get(`${API_BASE_URL}/api/produits/${produit.code_produit}/historique-stock`)
+        .then((response) => { this.historique = response.data })
+        .catch((err) => { console.log(err) })
     },
     async confirmerReajustement() {
       if (!this.produitAAjuster) return

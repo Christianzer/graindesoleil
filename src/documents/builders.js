@@ -128,11 +128,6 @@ export function recu (d) {
     ['En lettres', { text: montantMin(d.montant), italics: true, color: COULEURS.brun }],
   ]
   if (d.monnaie_rendue > 0) infos.push(['Monnaie rendue', fcfa(d.monnaie_rendue)])
-  if (commercial) {
-    infos.push(['Total cédé (cumul)', fcfa(d.total_pris)])
-    infos.push(['Total versé (cumul)', fcfa(d.total_verse)])
-  }
-  infos.push(['Reste dû', { text: fcfa(d.reste_du), bold: true, color: COULEURS.rouge }])
 
   const contenu = [blocInfos(infos.map(([k, v]) => [k, v]))]
   // Versement issu d'une déclaration de vente (voir CommercialFichesController::

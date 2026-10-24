@@ -34,6 +34,9 @@
               <b-button size="sm" variant="outline-primary" @click="ouvrirLot(row.item.code_lot)">
                 Reprendre
               </b-button>
+              <b-button v-if="peutCorriger" size="sm" variant="outline-danger" class="ml-1" :disabled="Loading" @click="supprimerLot(row.item.code_lot)" title="Supprimer ce lot et remettre le stock">
+                <i class="fas fa-trash"></i>
+              </b-button>
             </template>
           </b-table>
           <b-pagination
@@ -82,8 +85,14 @@
             responsive
             class="mb-4"
             :items="lotActif.lignes"
-            :fields="ligneFields"
+            :fields="ligneFieldsAvecActions"
         >
+          <template v-slot:cell(actions)="row">
+            <template v-if="peutCorriger && row.item.id === dernierId(lotActif.lignes)">
+              <b-button size="sm" variant="outline-primary" class="mr-1" :disabled="Loading" @click="ouvrirEdition(row.item, lotActif.lot.code_lot)">Modifier</b-button>
+              <b-button size="sm" variant="outline-warning" :disabled="Loading" @click="annulerEtape(row.item, lotActif.lot.code_lot)">Revenir en arrière</b-button>
+            </template>
+          </template>
           <template v-slot:cell(etape)="row">{{ etapeCourt(row.item.etape) }}</template>
           <template v-slot:cell(produit_obtenu)="row">{{ row.item.code_produit_destination ? nomProduit(row.item.code_produit_destination) : '—' }}</template>
           <template v-slot:cell(perte_pct)="row">{{ pertePctLigne(row.item) }}%</template>
@@ -214,6 +223,9 @@
               <strong>{{ g.code_lot || 'Hors lot' }}</strong>
               <span class="text-muted"> — {{ g.libelle_produit }}</span>
               <b-badge class="ml-2" variant="light">{{ g.nb }} opération{{ g.nb > 1 ? 's' : '' }}</b-badge>
+              <b-button v-if="g.code_lot && peutCorriger" size="sm" variant="outline-danger" class="ml-2 py-0" :disabled="Loading" @click.stop="supprimerLot(g.code_lot)">
+                Supprimer le lot
+              </b-button>
             </div>
             <div class="text-muted small text-nowrap">
               perte {{ nf(g.perte_totale) }} kg · {{ g.date_max | dateFr }}
@@ -221,7 +233,19 @@
             </div>
           </div>
           <b-collapse :id="'hist-' + g.cle" :visible="i === 0">
-            <b-table small bordered responsive class="mb-0" :items="g.lignes" :fields="histLigneFields">
+            <b-table small bordered responsive class="mb-0" :items="g.lignes" :fields="histLigneFieldsAvecActions">
+              <template v-slot:cell(actions)="row">
+                <template v-if="peutCorriger">
+                  <template v-if="row.item.lot_id">
+                    <template v-if="row.item.id === dernierId(g.lignes)">
+                      <b-button size="sm" variant="outline-primary" class="mr-1" :disabled="Loading" @click="ouvrirEdition(row.item, g.code_lot)">Modifier</b-button>
+                      <b-button size="sm" variant="outline-warning" :disabled="Loading" @click="annulerEtape(row.item, g.code_lot)">Revenir en arrière</b-button>
+                    </template>
+                    <span v-else class="text-muted small" title="Seule la dernière étape d'un lot se corrige : annulez d'abord les suivantes.">—</span>
+                  </template>
+                  <b-button v-else size="sm" variant="outline-danger" :disabled="Loading" @click="supprimerHorsLot(row.item)">Supprimer</b-button>
+                </template>
+              </template>
               <template v-slot:cell(etape)="row">{{ etapeCourt(row.item.etape) }}</template>
               <template v-slot:cell(produit_obtenu)="row">{{ row.item.code_produit_destination ? nomProduit(row.item.code_produit_destination) : '—' }}</template>
               <template v-slot:cell(perte_pct)="row">{{ pertePctLigne(row.item) }}%</template>
@@ -244,6 +268,46 @@
       <b-button variant="success" block :disabled="Loading" @click="creerLot">
         Démarrer le lot
       </b-button>
+    </b-modal>
+
+    <!-- Correction de la dernière étape d'un lot -->
+    <b-modal ref="modalEdition" hide-footer :title="'Corriger l\'étape — ' + (edition ? etapeCourt(edition.etape) : '')">
+      <template v-if="edition">
+        <p class="text-muted small">
+          Lot <strong>{{ edition.code_lot }}</strong>. Le stock est ajusté de la différence : la correction est refusée
+          si elle ferait passer un stock sous zéro (café déjà livré ou transformé).
+        </p>
+
+        <b-form-group v-if="edition.etape === 'broyage_vers_emballage'" label="Produit fini obtenu">
+          <search-select v-model="edition.code_produit_destination" :options="produitFinisOptions" placeholder="Choisir le produit emballé…"></search-select>
+        </b-form-group>
+
+        <b-form-group label="Date de la transformation">
+          <b-form-datepicker locale="fr-FR" v-model="edition.date_transformation"></b-form-datepicker>
+        </b-form-group>
+
+        <div class="row">
+          <div class="col-md-6">
+            <b-form-group label="Quantité entrée (kg)">
+              <b-form-input type="number" min="0" step="any" v-model="edition.quantite_entree"></b-form-input>
+            </b-form-group>
+          </div>
+          <div class="col-md-6">
+            <b-form-group label="Quantité obtenue (kg)">
+              <b-form-input type="number" min="0" step="any" v-model="edition.quantite_sortie"></b-form-input>
+            </b-form-group>
+          </div>
+        </div>
+        <p class="small">Perte : <strong :class="pertePctEdition > 5 ? 'text-danger' : ''">{{ perteEdition }} kg ({{ pertePctEdition }}%)</strong></p>
+
+        <b-form-group label="Observation (optionnel)">
+          <b-form-textarea v-model="edition.observation" rows="2"></b-form-textarea>
+        </b-form-group>
+
+        <b-button variant="success" block :disabled="Loading || !peutEnregistrerEdition" @click="enregistrerEdition">
+          Enregistrer la correction
+        </b-button>
+      </template>
     </b-modal>
   </div>
 </template>
@@ -279,6 +343,7 @@ export default {
       produitDestination: null,
       observation: '',
       historique: [],
+      edition: null, // étape en cours de correction : { id, code_lot, etape, quantite_entree, ... }
       etapes: ETAPES,
       recapDebut: moment().startOf('month').format('YYYY-MM-DD'),
       recapFin: moment().format('YYYY-MM-DD'),
@@ -320,6 +385,33 @@ export default {
     }
   },
   computed: {
+    // Seule l'usine (rôle 4) corrige, annule ou supprime ses transformations.
+    peutCorriger() {
+      try {
+        return Number(JSON.parse(localStorage.getItem('LoggedUser')).type_user) === 4
+      } catch (e) {
+        return false
+      }
+    },
+    ligneFieldsAvecActions() {
+      return this.peutCorriger ? [...this.ligneFields, { key: 'actions', label: '' }] : this.ligneFields
+    },
+    histLigneFieldsAvecActions() {
+      return this.peutCorriger ? [...this.histLigneFields, { key: 'actions', label: '' }] : this.histLigneFields
+    },
+    peutEnregistrerEdition() {
+      const e = this.edition
+      return !!e && Number(e.quantite_entree) > 0 && Number(e.quantite_sortie) >= 0
+        && (e.etape !== 'broyage_vers_emballage' || !!e.code_produit_destination)
+    },
+    perteEdition() {
+      if (!this.edition) return 0
+      return Math.round(((Number(this.edition.quantite_entree) || 0) - (Number(this.edition.quantite_sortie) || 0)) * 1000) / 1000
+    },
+    pertePctEdition() {
+      const entree = this.edition ? Number(this.edition.quantite_entree) || 0 : 0
+      return entree > 0 ? Math.round(this.perteEdition / entree * 10000) / 100 : 0
+    },
     produitOptions() {
       return this.produits.map(p => ({ value: p.code_produit, text: p.libelle_produit }))
     },
@@ -388,6 +480,105 @@ export default {
     },
   },
   methods: {
+    // La dernière étape d'un lot est celle qui a le plus grand identifiant.
+    dernierId(lignes) {
+      return (lignes || []).reduce((max, l) => Math.max(max, Number(l.id) || 0), 0)
+    },
+    messageErreur(e, defaut) {
+      return (e && e.response && e.response.data && e.response.data.message) || defaut
+    },
+    ouvrirEdition(ligne, codeLot) {
+      this.edition = {
+        id: ligne.id,
+        code_lot: codeLot,
+        etape: ligne.etape,
+        quantite_entree: ligne.quantite_entree,
+        quantite_sortie: ligne.quantite_sortie,
+        date_transformation: String(ligne.date_transformation || '').slice(0, 10),
+        observation: ligne.observation || '',
+        code_produit_destination: ligne.code_produit_destination || null,
+      }
+      this.$refs.modalEdition.show()
+    },
+    async enregistrerEdition() {
+      if (this.Loading || !this.edition) return
+      this.Loading = true
+      const e = this.edition
+      try {
+        await axios.put(`${API_BASE_URL}/api/transformations/${e.id}`, {
+          quantite_entree: Number(e.quantite_entree),
+          quantite_sortie: Number(e.quantite_sortie),
+          date_transformation: e.date_transformation,
+          observation: e.observation,
+          code_produit_destination: e.code_produit_destination,
+        })
+        this.$bvToast.toast('Étape corrigée, stock ajusté.', { title: 'Transformation', variant: 'success', solid: true })
+        this.$refs.modalEdition.hide()
+        await this.rafraichirApresCorrection(e.code_lot)
+      } catch (err) {
+        this.$bvToast.toast(this.messageErreur(err, 'La correction a échoué.'), { title: 'Transformation', variant: 'danger', solid: true })
+      }
+      this.Loading = false
+    },
+    async annulerEtape(ligne, codeLot) {
+      const ok = await this.$bvModal.msgBoxConfirm(
+        `Revenir en arrière sur l'étape « ${this.etapeCourt(ligne.etape)} » du lot ${codeLot} ? `
+        + `Elle sera annulée, le stock remis comme avant (${this.nf(ligne.quantite_sortie)} kg retirés, ${this.nf(ligne.quantite_entree)} kg remis) et le lot reviendra à l'étape précédente.`,
+        { title: 'Revenir en arrière', okTitle: "Annuler l'étape", cancelTitle: 'Garder', okVariant: 'warning', centered: true }
+      )
+      if (!ok) return
+      this.Loading = true
+      try {
+        await axios.post(`${API_BASE_URL}/api/lots/${codeLot}/etape/annuler`)
+        this.$bvToast.toast('Étape annulée, stock remis.', { title: 'Transformation', variant: 'success', solid: true })
+        await this.rafraichirApresCorrection(codeLot)
+      } catch (err) {
+        this.$bvToast.toast(this.messageErreur(err, "L'annulation a échoué."), { title: 'Transformation', variant: 'danger', solid: true })
+      }
+      this.Loading = false
+    },
+    async supprimerLot(codeLot) {
+      const ok = await this.$bvModal.msgBoxConfirm(
+        `Supprimer le lot ${codeLot} ? Toutes ses étapes seront annulées, le stock remis comme avant le lot, et le lot disparaîtra de la liste.`,
+        { title: 'Supprimer le lot', okTitle: 'Supprimer le lot', cancelTitle: 'Garder', okVariant: 'danger', centered: true }
+      )
+      if (!ok) return
+      this.Loading = true
+      try {
+        await axios.delete(`${API_BASE_URL}/api/lots/${codeLot}`)
+        this.$bvToast.toast('Lot supprimé, stock remis.', { title: 'Transformation', variant: 'success', solid: true })
+        if (this.lotActif && this.lotActif.lot.code_lot === codeLot) {
+          this.lotActif = null
+        }
+        this.fetchAll()
+      } catch (err) {
+        this.$bvToast.toast(this.messageErreur(err, 'La suppression a échoué.'), { title: 'Transformation', variant: 'danger', solid: true })
+      }
+      this.Loading = false
+    },
+    async supprimerHorsLot(ligne) {
+      const ok = await this.$bvModal.msgBoxConfirm(
+        `Supprimer cette transformation « ${this.etapeCourt(ligne.etape)} » (${this.nf(ligne.quantite_entree)} kg → ${this.nf(ligne.quantite_sortie)} kg) ? Le stock sera remis comme avant.`,
+        { title: 'Supprimer la transformation', okTitle: 'Supprimer', cancelTitle: 'Garder', okVariant: 'danger', centered: true }
+      )
+      if (!ok) return
+      this.Loading = true
+      try {
+        await axios.delete(`${API_BASE_URL}/api/transformations/${ligne.id}`)
+        this.$bvToast.toast('Transformation supprimée, stock remis.', { title: 'Transformation', variant: 'success', solid: true })
+        this.fetchAll()
+      } catch (err) {
+        this.$bvToast.toast(this.messageErreur(err, 'La suppression a échoué.'), { title: 'Transformation', variant: 'danger', solid: true })
+      }
+      this.Loading = false
+    },
+    // Recharge les listes et, si l'assistant est ouvert sur ce lot, son état (étapes faites, étape suivante).
+    async rafraichirApresCorrection(codeLot) {
+      this.fetchAll()
+      if (this.lotActif && this.lotActif.lot.code_lot === codeLot) {
+        await this.ouvrirLot(codeLot)
+      }
+    },
     nf(v) {
       return new Intl.NumberFormat('fr-FR').format(Number(v) || 0)
     },

@@ -69,10 +69,6 @@
                 <b-td colspan="2" class="text-uppercase text-left text-danger font-weight-bold">{{new Intl.NumberFormat().format(totalListes)}} FCFA</b-td>
               </b-tr>
               <b-tr>
-                <b-td colspan="5" class="text-uppercase text-right text-danger font-weight-bold">TOTAL ENCAISSEMENT</b-td>
-                <b-td colspan="2" class="text-uppercase text-left text-danger font-weight-bold">{{new Intl.NumberFormat().format(totalEncaissement)}} FCFA</b-td>
-              </b-tr>
-              <b-tr>
                 <b-td colspan="5" class="text-uppercase text-right text-danger font-weight-bold">TOTAL approvisionnement </b-td>
                 <b-td colspan="2" class="text-uppercase text-left text-danger font-weight-bold">{{new Intl.NumberFormat().format(totalAppro)}} FCFA</b-td>
               </b-tr>
@@ -239,7 +235,7 @@ export default {
           this.totalListes = Math.round(response.data.total)
           this.totalEncaissement = Math.round(response.data.encaisse)
           this.totalAppro = Math.round(response.data.appro)
-          this.restant = Math.round((this.totalEncaissement + this.totalAppro) - this.totalListes)
+          this.restant = Math.round(this.totalAppro - this.totalListes)
           this.totalRows = this.listes.length
           console.log(this.totalRows)
         }

@@ -17,7 +17,12 @@ const ADMIN_PERMISSIONS = [
 // Responsable : périmètre de l'admin, sans la section « Suivi & Documents » du
 // menu (archive = documents_clients, Historiques, Journal d'activité).
 const MASQUE_RESPONSABLE = ['documents_clients', 'historiques', 'historiques_encaissement', 'journal_activite']
-const RESPONSABLE_PERMISSIONS = ADMIN_PERMISSIONS.filter(p => !MASQUE_RESPONSABLE.includes(p))
+// Consultation croisée (lecture seule, appliquée par ConsultationSeule côté serveur) :
+// le responsable voit les écrans de l'usine, l'usine voit ceux du responsable
+// hors données clients (RestreindreCaisse) et hors paramètres/clôtures/backup.
+const RESPONSABLE_CONSULTATION = ['transformations', 'fournisseurs', 'approvisionnement']
+const USINE_CONSULTATION = ['stocks', 'decaissement', 'rapport_caisse', 'commercial_prises', 'compte_commercial', 'commercial']
+const RESPONSABLE_PERMISSIONS = ADMIN_PERMISSIONS.filter(p => !MASQUE_RESPONSABLE.includes(p)).concat(RESPONSABLE_CONSULTATION)
 
 // Fournisseurs/approvisionnement : l'usine saisit son stock de matière
 // première via ses propres réceptions fournisseurs (achat de café grain) et
@@ -26,7 +31,7 @@ const USINE_PERMISSIONS = [
   'dashboard', 'transformations',
   'demandes', 'demandes_livrer',
   'fournisseurs', 'approvisionnement',
-]
+].concat(USINE_CONSULTATION)
 
 // Aucun écran dédié pour le commercial dans ce plan (voir ruling en tête de plan) :
 // les cessions/versements/solde sont gérés par le responsable.
@@ -57,6 +62,13 @@ const PERMISSIONS_BY_ROLE = {
 
 export function getPermissionsForRole(typeUser) {
   return PERMISSIONS_BY_ROLE[typeUser] || []
+}
+
+// Écran ouvert en lecture seule pour ce rôle (bandeau « consultation »).
+export function enConsultation(typeUser, routeName) {
+  if (Number(typeUser) === 3) return RESPONSABLE_CONSULTATION.includes(routeName)
+  if (Number(typeUser) === 4) return USINE_CONSULTATION.includes(routeName)
+  return false
 }
 
 export function hasPermission(routeName) {

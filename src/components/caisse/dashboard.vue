@@ -31,9 +31,9 @@
                       :sub="'BL ' + fmt(data.encaisse_bl) + ' · Comm. ' + fmt(data.encaisse_commerciaux) + ' — cliquer pour le détail'"
                       icon="fas fa-check-circle" variant="accent" />
           </div>
-          <DetailProduitsModal ref="detailEncaisse" title="Encaissé du jour — produits des BL encaissés"
+          <DetailProduitsModal ref="detailEncaisse" title="Encaissé du jour — produits encaissés"
                                url="/api/dashboard/detail/encaisse" :params="{ debut: date, fin: date }"
-                               :note="'Journée du ' + date + '. Bons de livraison clients uniquement : les versements des commerciaux (' + fmt(data.encaisse_commerciaux) + ') ont leur propre carte.'" />
+                               :note="'Journée du ' + date + '. BL (' + fmt(data.encaisse_bl) + ') et versements des commerciaux (' + fmt(data.encaisse_commerciaux) + '), répartis par produit.'" />
         </div>
         <div class="col-xl-3 col-md-6 mb-4">
           <div class="obf-clickable" @click="$refs.detailVerse.ouvrir()">

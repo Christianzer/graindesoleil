@@ -42,7 +42,7 @@
           <div class="obf-clickable" @click="$refs.detailEncaisse.ouvrir()">
             <StatCard label="Encaissé" :value="fmt(kpis.encaisse)" sub="Cliquer : détail par produit" icon="fas fa-check-circle" variant="accent" />
           </div>
-          <DetailProduitsModal ref="detailEncaisse" title="Encaissé — produits des BL encaissés"
+          <DetailProduitsModal ref="detailEncaisse" title="Encaissé — produits encaissés"
                                url="/api/dashboard/detail/encaisse" :params="{ debut: dateDebut, fin: dateFin }" :note="noteEncaisse" />
         </div>
         <div class="col-xl col-md-6 mb-4">
@@ -248,11 +248,10 @@ export default {
     }
   },
   computed: {
-    // Le chiffre « Encaissé » additionne clients et commerciaux ; le détail par produit ne couvre
-    // que les BL clients, d'où cette précision pour que le total de la fenêtre se lise correctement.
+    // Le chiffre « Encaissé » additionne clients et commerciaux ; le détail aussi (total identique).
     noteEncaisse() {
-      return `Période du ${this.dateDebut} au ${this.dateFin}. Bons de livraison clients uniquement : `
-        + `les versements des commerciaux (${this.fmt(this.kpis.verse_commerciaux)}) sont dans la carte « Versé par les commerciaux ».`
+      return `Période du ${this.dateDebut} au ${this.dateFin}. BL clients (${this.fmt(this.kpis.encaisse_clients)}) `
+        + `et versements des commerciaux (${this.fmt(this.kpis.verse_commerciaux)}), répartis par produit.`
     },
     caChartData() {
       return {

@@ -4,7 +4,7 @@ Ce fichier fournit des instructions à Claude Code (claude.ai/code) pour travail
 
 ## Aperçu du Projet
 
-Grains Moulus Stock est une application de bureau Vue 2 + Tauri pour la gestion de stock et les opérations de caisse. L'application gère les clients, produits, ventes (bons de livraison), avoirs, fournisseurs/approvisionnement et opérations de trésorerie.
+Café Fortuna Stock (produit Grains Moulus) est une application de bureau Vue 2 + Tauri pour la gestion de stock et les opérations de caisse. L'application gère les clients, produits, ventes (bons de livraison), avoirs, fournisseurs/approvisionnement, caisse/trésorerie, dépôt-vente commercial, transformations de stock, demandes internes et clôtures de période. Elle est aussi distribuée comme **PWA** (installable sur mobile, notifications push).
 
 ## Commandes de Build et Développement
 
@@ -25,15 +25,16 @@ yarn build
 yarn tauri:build
 ```
 
-En dev, le backend Laravel n'est PAS géré par Tauri : lancez-le vous-même (`php -S 127.0.0.1:8000 -t . index.php` depuis `gstockgrainsmoulus/`, ou Apache/Laragon) — le proxy webpack (`vue.config.js`) pointe dessus. En production, l'app se connecte au backend hébergé en ligne (`https://api.cafefortuna.net`, voir `src/api/config.js`) — plus de sidecar PHP embarqué (voir plus bas).
+**Backend.** L'app se connecte au **même backend hébergé en ligne** en dev et en prod : `https://api.cafefortuna.net` en dur dans `src/api/config.js`. Il n'y a **plus de proxy webpack** (`vue.config.js` n'en définit aucun) ni de sidecar PHP embarqué — lancer le backend Laravel en local n'est donc plus nécessaire pour utiliser l'app. Pour travailler sur le backend lui-même, voir `gstockgrainsmoulus/CLAUDE.md` (serveur `php -S 127.0.0.1:8000 serve_local.php`).
 
 ## Architecture
 
 ### Stack Technique
-- **Vue 2.6** avec Vue Router (mode history)
-- **Tauri 2** (Rust + WebView2) pour le packaging desktop — migré depuis Electron
-- **BootstrapVue** pour les composants UI
+- **Vue 2.6** (Options API) avec Vue Router (mode history)
+- **Tauri 2** (Rust + WebView2) pour le packaging desktop — migré depuis Electron. Installeur **NSIS**.
+- **BootstrapVue** pour les composants UI, plus `element-plus`, `vue-select` (wrapper local `search-select`)
 - **Axios** pour les requêtes HTTP
+- **PWA** : service worker custom (`src/service-worker.js`, mode Workbox `InjectManifest`) pour les notifications push (`web-push` côté serveur)
 
 ### Points d'Entrée
 - `src/main.js` - Initialisation Vue, plugins globaux (BootstrapVue, axios, vue-select)
@@ -54,34 +55,45 @@ La clé privée de signature (`grainsmoulus-updater.key`, générée par `tauri 
 - `src/components/` - Modules fonctionnels organisés par domaine :
   - `clients/` - Gestion des clients
   - `stocks/` - Gestion des produits/inventaire
-  - `ventes/` - Ventes TTC
-  - `ventes_ht/` - Ventes HT (hors taxes)
-  - `commande/` - Commandes et factures TTC
-  - `commande_ht/` - Commandes et factures HT
+  - `ventes/` - Ventes / bons de livraison
+  - `commande/` - Commandes et factures
   - `caisse/` - Opérations de caisse (encaissement)
-  - `historiques/`, `historiks/`, `historiks_ht/` - Vues d'historique
+  - `comptes/` - Comptes client / relevés
+  - `historiques/`, `historiks/` - Vues d'historique
   - `entree/` - Entrée de stock / approvisionnement
   - `sortie/` - Sortie de stock / décaissement
+  - `fournisseurs/` - Fournisseurs et approvisionnements
+  - `commercial/`, `commercial_prises/`, `commerciaux/` - Dépôt-vente commercial (fiches, prises, versements)
+  - `demandes/` - Demandes de stock internes
+  - `usine/` - Transformations de stock (conversion matière première → produit fini)
+  - `clotures/` - Clôtures de période
+  - `parametres/` - Paramètres entreprise
   - `rapport/` - Rapports
   - `admin/` - Tableau de bord
-  - `commercial/` - Gestion des commerciaux
-  - `maj/`, `maj_ht/` - Mise à jour des factures
+  - `journal_activite/` - Journal d'activité
+  - `maj/` - Mise à jour des factures
+  - `assistant/` - Assistant de vente
+  - `documents/`, `ui/`, `dev/` - Documents, composants UI réutilisables, prévisualisation dev
 - `src/layouts/` - Composants de structure (Menu.vue, sidebar.vue, header.vue, footer.vue)
 - `src/views/` - Vues de pages (login.vue)
-- `src/api/config.js` - Configuration de l'URL API
+- `src/api/config.js` - Configuration de l'URL API (`API_BASE_URL`)
+- `src/store/flow.js` - État inter-vues de la vente en cours (adossé à localStorage, pas Vuex)
+- `src/utils/` - Utilitaires (dont `print.js` `ouvrirDocument()` et `entier.js`)
 
 ### Configuration API
-L'application se connecte à une API backend. En développement, les requêtes vers `/gstockobf` sont proxifiées vers `http://192.168.116.3`. En production, l'URL `http://gstockobf.test` est utilisée.
+`src/api/config.js` exporte `API_BASE_URL = 'https://api.cafefortuna.net'` — **en dur, identique en dev et en prod**. Il n'y a plus de proxy webpack ni d'URL de test locale (`http://gstockobf.test` / `192.168.116.3` sont obsolètes).
 
 ### Authentification et Routage
 - Authentification stockée dans `localStorage` sous `LoggedUser`
-- Le guard `guardMyroute` vérifie les permissions utilisateur selon les noms de routes
+- Le guard `guardMyroute` (`src/router/index.js`) vérifie les permissions utilisateur selon les noms de routes ; deux routes sont publiques à tout utilisateur connecté (`documents_clients`, `assistant_vente`)
 - Les permissions sont un tableau de noms de routes dans l'objet utilisateur
 - Le layout principal utilise `Menu.vue` qui encapsule les routes authentifiées avec la navigation sidebar
+- `src/main.js` ajoute un intercepteur de requête axios qui attache `X-User` / `X-User-Role` depuis `LoggedUser`, et un intercepteur de réponse qui affiche un toast « Période clôturée » sur un HTTP **423**
 
 ### Patterns des Composants
 - Composants en style Options API
-- Appels API via axios avec `API_BASE_URL` depuis config
+- Appels API via axios avec `API_BASE_URL` depuis config (`Vue.prototype.$http`)
 - Données souvent passées entre vues via `localStorage`
 - Bus d'événements global disponible via `window.Fire` (instance Vue)
 - Tables avec `b-table` incluant pagination et filtrage
+- Champs de montants en FCFA entiers : directive `v-entier` (`src/utils/entier.js`) ; dates affichées en `JJ/MM/AAAA` via le filtre `dateFr`

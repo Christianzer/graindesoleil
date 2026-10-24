@@ -87,6 +87,9 @@ axios.interceptors.response.use(
     if (r && r.status === 423 && r.data && r.data.periode_cloturee) {
       app.$bvToast.toast(r.data.message, { title: 'Période clôturée', variant: 'warning', solid: true, autoHideDelay: 8000 })
     }
+    if (r && r.status === 403 && r.data && /^Consultation seule/.test(r.data.message || '')) {
+      app.$bvToast.toast(r.data.message, { title: 'Consultation seule', variant: 'info', solid: true, autoHideDelay: 6000 })
+    }
     return Promise.reject(error)
   }
 )
