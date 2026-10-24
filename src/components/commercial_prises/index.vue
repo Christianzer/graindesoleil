@@ -196,6 +196,9 @@
         <template v-slot:cell(mode_paiement)="row">{{ modePaiementLabel(row.item.mode_paiement) }}</template>
         <template v-slot:cell(montant)="row">{{ nf(row.item.montant) }} FCFA</template>
         <template v-slot:cell(actions)="row">
+          <b-button size="sm" variant="outline-primary" class="mr-1" @click="imprimerRecuVersement(row.item)" title="Imprimer le reçu">
+            <i class="fas fa-print"></i>
+          </b-button>
           <b-button v-if="peutSupprimer" size="sm" variant="outline-danger" @click="supprimerVersement(row.item)" title="Supprimer">
             <i class="fas fa-trash"></i>
           </b-button>
@@ -589,6 +592,9 @@ export default {
     },
     imprimerCession(prise) {
       imprimerDocument('cession', prise.code_prise)
+    },
+    imprimerRecuVersement(versement) {
+      imprimerDocument('recu_commercial', versement.id)
     },
     imprimerReleve() {
       if (!this.commercialSelectionne) return
