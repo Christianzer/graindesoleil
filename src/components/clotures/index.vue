@@ -11,13 +11,12 @@
           <h5 class="mb-1">Période ouverte</h5>
           <p class="text-muted mb-3">
             À partir du <strong>{{ dateFr(prochaine.debut) }}</strong>.
-            <span v-if="!prochaine.cloturable">Rien à clôturer pour l'instant : la journée en cours ne peut pas l'être.</span>
           </p>
 
           <template v-if="prochaine.cloturable">
             <div class="form-inline mb-3">
               <label class="mr-2">Clôturer jusqu'au</label>
-              <b-form-input type="date" v-model="finChoisie" :min="prochaine.debut" :max="prochaine.fin_max" class="mr-3" @change="chargerApercu"></b-form-input>
+              <b-form-input type="date" v-model="finChoisie" :min="prochaine.debut" class="mr-3" @change="chargerApercu"></b-form-input>
               <b-badge v-if="estAnticipee" variant="warning" class="mr-3">Clôture anticipée (le mois n'est pas terminé)</b-badge>
               <b-badge v-else-if="depasseFinMois" variant="info" class="mr-3">Au-delà de la fin du mois</b-badge>
               <b-badge v-else variant="success" class="mr-3">Fin de mois</b-badge>
