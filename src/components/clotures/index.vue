@@ -19,6 +19,7 @@
               <label class="mr-2">Clôturer jusqu'au</label>
               <b-form-input type="date" v-model="finChoisie" :min="prochaine.debut" :max="prochaine.fin_max" class="mr-3" @change="chargerApercu"></b-form-input>
               <b-badge v-if="estAnticipee" variant="warning" class="mr-3">Clôture anticipée (le mois n'est pas terminé)</b-badge>
+              <b-badge v-else-if="depasseFinMois" variant="info" class="mr-3">Au-delà de la fin du mois</b-badge>
               <b-badge v-else variant="success" class="mr-3">Fin de mois</b-badge>
               <b-button variant="primary" :disabled="occupe || !finChoisie" @click="confirmerCloture">
                 <i class="fas fa-lock mr-1"></i> Clôturer cette période
@@ -111,6 +112,9 @@ export default {
     estAnticipee() {
       return !!this.finChoisie && this.finChoisie < this.prochaine.fin_mois
     },
+    depasseFinMois() {
+      return !!this.finChoisie && this.finChoisie > this.prochaine.fin_mois
+    },
   },
   created() {
     this.charger()
@@ -130,7 +134,7 @@ export default {
         const { data } = await axios.get(`${API_BASE_URL}/api/clotures`)
         this.clotures = data.clotures
         this.prochaine = data.prochaine
-        this.finChoisie = data.prochaine.fin_max
+        this.finChoisie = data.prochaine.fin_suggeree || data.prochaine.fin_max
         this.apercu = null
         if (data.prochaine.cloturable) {
           await this.chargerApercu()
