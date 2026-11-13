@@ -33,6 +33,10 @@ export async function exporterClotureExcel (c) {
     ['Bons de livraison', r.ventes.nb_bl, r.ventes.total_ttc],
     ['Avoirs', r.ventes.nb_avoirs, r.ventes.total_avoirs],
     ['Ventes nettes TTC', '', r.ventes.net_ttc],
+  ].concat(r.cessions ? [
+    ['Cessions aux commerciaux (dépôt-vente)', r.cessions.nb, r.cessions.total],
+    ['Total ventes + cessions', '', r.ventes.net_ttc + r.cessions.total],
+  ] : []).concat([
     [],
     ['Encaissements et caisse'],
     ['Encaissé clients', r.encaissement.clients.nb, r.encaissement.clients.total],
@@ -50,7 +54,7 @@ export async function exporterClotureExcel (c) {
     ['Approvisionnements', r.achats.nb, r.achats.total],
     ['Réglé aux fournisseurs', '', r.achats.regle],
     ['Dette fournisseurs fin de période', '', r.achats.dette_fin],
-  ], [38, 12, 18])
+  ]), [38, 12, 18])
 
   // ---- Ventes
   table('Ventes par produit', ['Produit', 'Quantité', 'Montant'], r.ventes.par_produit, x => [x.libelle, x.quantite, x.montant], [34, 12, 16])
@@ -59,6 +63,12 @@ export async function exporterClotureExcel (c) {
   table('Ventes par client', ['Client', 'BL', 'Montant net', 'Versé', 'Reste dû'], r.ventes.par_client, x => [x.client, x.nb_bl, x.montant, x.verse, x.reste], [34, 8, 16, 16, 16])
   table('Liste des BL', ['N°', 'Date', 'Type', 'Client', 'Montant', 'Versé', 'Reste', 'Saisi par'], r.ventes.liste_bl,
     x => [x.numero, x.date, x.type, x.client, x.montant, x.verse, x.reste, x.saisi_par], [20, 12, 8, 30, 14, 14, 14, 16])
+
+  // ---- Cessions aux commerciaux (dépôt-vente) — absentes des anciens récapitulatifs
+  const cs = r.cessions || {}
+  table('Cessions par produit', ['Produit', 'Quantité', 'Montant'], cs.par_produit, x => [x.libelle, x.quantite, x.montant], [34, 12, 16])
+  table('Cessions par commercial', ['Commercial', 'Cessions', 'Montant'], cs.par_commercial, x => [x.commercial, x.nb, x.montant], [30, 10, 16])
+  table('Liste des cessions', ['N°', 'Date', 'Commercial', 'Montant'], cs.liste, x => [x.numero, x.date, x.commercial, x.montant], [20, 12, 30, 16])
 
   // ---- Caisse
   table('Encaissements par mode', ['Mode', 'Montant'], r.encaissement.par_mode, x => [x.mode, x.montant], [30, 16])

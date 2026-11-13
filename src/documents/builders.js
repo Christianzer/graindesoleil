@@ -438,7 +438,18 @@ export function cloture (d) {
     ['Bons de livraison', `${r.ventes.nb_bl} — ${fcfa(r.ventes.total_ttc)}`],
     ['Avoirs', `${r.ventes.nb_avoirs} — ${fcfa(r.ventes.total_avoirs)}`],
     ['Ventes nettes TTC', fcfa(r.ventes.net_ttc)],
-  ]))
+  ].concat(r.cessions ? [
+    ['Cessions aux commerciaux (dépôt-vente)', `${r.cessions.nb} — ${fcfa(r.cessions.total)}`],
+    ['Total ventes + cessions', fcfa(r.ventes.net_ttc + r.cessions.total)],
+  ] : [])))
+  if (r.cessions) {
+    tab('Cessions par produit (dépôt-vente)',
+      [{ text: 'Produit', key: 'p' }, droite('Quantité', 'q'), droite('Montant (FCFA)', 'm')],
+      (r.cessions.par_produit || []).map(x => ({ p: x.libelle, q: kg(x.quantite), m: num(x.montant) })))
+    tab('Cessions par commercial',
+      [{ text: 'Commercial', key: 'c' }, droite('Cessions', 'n'), droite('Montant (FCFA)', 'm')],
+      (r.cessions.par_commercial || []).map(x => ({ c: x.commercial, n: x.nb, m: num(x.montant) })))
+  }
   if (r.ventes.par_produit.length) {
     contenu.push(tableauLignes(
       [{ text: 'Produit', key: 'p' }, droite('Quantité', 'q'), droite('Montant (FCFA)', 'm')],

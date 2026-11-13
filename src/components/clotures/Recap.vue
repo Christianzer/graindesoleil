@@ -2,7 +2,9 @@
   <div class="cloture-recap">
     <div class="row">
       <div class="col-md-3 mb-3">
-        <StatCard label="Ventes nettes TTC" :value="fcfa(recap.ventes.net_ttc)" :sub="recap.ventes.nb_bl + ' BL · ' + recap.ventes.nb_avoirs + ' avoir(s)'" />
+        <StatCard v-if="recap.cessions" label="Ventes + cessions" :value="fcfa(recap.ventes.net_ttc + recap.cessions.total)"
+                  :sub="'BL : ' + fcfa(recap.ventes.net_ttc) + ' · Cessions : ' + fcfa(recap.cessions.total)" />
+        <StatCard v-else label="Ventes nettes TTC" :value="fcfa(recap.ventes.net_ttc)" :sub="recap.ventes.nb_bl + ' BL · ' + recap.ventes.nb_avoirs + ' avoir(s)'" />
       </div>
       <div class="col-md-3 mb-3">
         <StatCard label="Encaissé" :value="fcfa(recap.encaissement.total)" :sub="'Solde de caisse fin : ' + fcfa(recap.caisse.solde_fin)" />
@@ -18,8 +20,16 @@
     <b-tabs content-class="pt-3" lazy>
       <!-- ============================== VENTES ============================== -->
       <b-tab title="Ventes" active>
-        <h6>Ventes par produit</h6>
-        <b-table small bordered responsive :items="L(recap.ventes.par_produit)" :fields="fProduit" show-empty empty-text="Aucune vente sur la période.">
+        <table v-if="recap.cessions" class="table table-sm table-bordered mb-3" style="max-width: 560px;">
+          <tbody>
+            <tr><td>Bons de livraison ({{ recap.ventes.nb_bl }}) − avoirs ({{ recap.ventes.nb_avoirs }})</td><td class="text-right">{{ fcfa(recap.ventes.net_ttc) }}</td></tr>
+            <tr><td>Cessions aux commerciaux — dépôt-vente ({{ recap.cessions.nb }})</td><td class="text-right">{{ fcfa(recap.cessions.total) }}</td></tr>
+            <tr class="font-weight-bold"><td>Total ventes + cessions</td><td class="text-right">{{ fcfa(recap.ventes.net_ttc + recap.cessions.total) }}</td></tr>
+          </tbody>
+        </table>
+
+        <h6>Ventes par produit (bons de livraison)</h6>
+        <b-table small bordered responsive :items="L(recap.ventes.par_produit)" :fields="fProduit" show-empty empty-text="Aucun bon de livraison sur la période.">
           <template #cell(quantite)="d">{{ nb(d.value) }}</template>
           <template #cell(montant)="d">{{ fcfa(d.value) }}</template>
         </b-table>
@@ -57,6 +67,29 @@
             <template #cell(verse)="d">{{ fcfa(d.value) }}</template>
             <template #cell(reste)="d">{{ fcfa(d.value) }}</template>
           </b-table>
+        </template>
+
+        <template v-if="recap.cessions">
+          <h6 class="mt-4">Cessions aux commerciaux (dépôt-vente) — {{ recap.cessions.nb }} cession(s) validée(s), nettes des avoirs</h6>
+          <b-table small bordered responsive :items="recap.cessions.par_produit" :fields="fProduit" show-empty empty-text="Aucune cession validée sur la période.">
+            <template #cell(quantite)="d">{{ nb(d.value) }}</template>
+            <template #cell(montant)="d">{{ fcfa(d.value) }}</template>
+          </b-table>
+          <div class="row" v-if="aSection(recap.cessions.par_commercial)">
+            <div class="col-lg-6">
+              <h6 class="mt-3">Cessions par commercial</h6>
+              <b-table small bordered responsive :items="recap.cessions.par_commercial" :fields="fCessionCommercial">
+                <template #cell(montant)="d">{{ fcfa(d.value) }}</template>
+              </b-table>
+            </div>
+            <div class="col-lg-6">
+              <h6 class="mt-3">Liste des cessions ({{ recap.cessions.liste.length }})</h6>
+              <b-table small bordered responsive striped :items="recap.cessions.liste" :fields="fListeCessions">
+                <template #cell(date)="d">{{ dateFr(d.value) }}</template>
+                <template #cell(montant)="d">{{ fcfa(d.value) }}</template>
+              </b-table>
+            </div>
+          </div>
         </template>
       </b-tab>
 
@@ -297,6 +330,17 @@ export default {
       fProduit: [
         { key: 'libelle', label: 'Produit' },
         { key: 'quantite', label: 'Quantité', class: droite },
+        { key: 'montant', label: 'Montant', class: droite },
+      ],
+      fCessionCommercial: [
+        { key: 'commercial', label: 'Commercial' },
+        { key: 'nb', label: 'Cessions', class: droite },
+        { key: 'montant', label: 'Montant', class: droite },
+      ],
+      fListeCessions: [
+        { key: 'numero', label: 'N°' },
+        { key: 'date', label: 'Date' },
+        { key: 'commercial', label: 'Commercial' },
         { key: 'montant', label: 'Montant', class: droite },
       ],
       fNiveau: [
